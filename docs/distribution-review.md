@@ -37,3 +37,11 @@ Comprobaciones realizadas en un proyecto Docker temporal separado, sin reutiliza
 - Compilación desde una exportación nueva, verificación de tokens/tipos y rechazo explícito del CSS defectuoso.
 
 No se han actualizado ni recreado las instalaciones reales. Para corregir una instalación existente basta descargar esta versión y reconstruirla conservando configuración y volúmenes.
+
+## 0.22.2: carpetas del servidor y APK descargable
+
+El Compose exportado solo montaba una carpeta `media` del proyecto, vacía en una instalación nueva. El explorador no podía mostrar los discos y directorios del anfitrión. La distribución añade `/host` en solo lectura, con la raíz del servidor Linux como origen predeterminado, y mantiene `/media` para no cambiar las rutas de bibliotecas existentes. Se puede limitar el origen con `VELORA_HOST_PATH`; UID y GID son configurables y se mantienen los permisos del sistema. El selector explica los montajes y muestra la ruta de cada carpeta. No se cambian permisos ni archivos del anfitrión.
+
+Se ofrece el APK Android 0.8.1 (código 29), firmado con la identidad de publicación existente, junto con un anuncio OTA y SHA256. La clave de firma no forma parte del código, del APK ni de los archivos de la release. La aplicación sigue sin servidor personal predeterminado. Los administradores pueden descargar el APK sin compilarlo y alojar las actualizaciones en su propio servidor.
+
+Validación de 0.22.2: instalación Docker aislada con volúmenes nuevos; alta inicial; exploración de `/host/home`, `/host/mnt` y subcarpetas; creación de una biblioteca en el montaje del anfitrión; intento de escritura rechazado por el sistema de archivos de solo lectura. La web supera comprobación de tipos, tokens y CSS compilado. El APK release supera compilación, lint y verificación de firma. Se corrige también la compilación duplicada y concurrente de una misma imagen: solo server la construye y worker la reutiliza. GitHub Actions instala `platform-tools` sin solicitar el antiguo paquete `tools`, que ya no está disponible.

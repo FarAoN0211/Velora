@@ -15,7 +15,7 @@ WORKDIR /src/server
 COPY server/go.mod server/go.sum ./
 RUN go mod download
 COPY server/ ./
-ARG VERSION=0.22.1
+ARG VERSION=0.22.2
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X velora/internal/api.Version=${VERSION}" -o /out/velora ./cmd/velora
 
 # Misma versión de Alpine que la imagen de Desarrollo en la que se ejecutan todas las pruebas (FFmpeg 8, cliente de

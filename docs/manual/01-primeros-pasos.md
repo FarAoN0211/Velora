@@ -28,8 +28,7 @@ El asistente también puede completarse desde el móvil escaneando el QR que apa
 ## Añadir bibliotecas
 
 En **Perfil → Panel de control → Bibliotecas → Añadir biblioteca** elige el tipo (películas o series) y la carpeta. Las
-rutas que ve el contenedor empiezan por `/media`; crea una biblioteca por tipo, por ejemplo `/media/Peliculas` y
-`/media/Series`. El escaneo empieza solo y el catálogo se va llenando mientras dura.
+rutas del servidor aparecen bajo `/host`: por ejemplo `/host/home/tu-usuario/Vídeos` o `/host/mnt/Disco/Peliculas`. El montaje `/media` también sigue disponible. Crea una biblioteca por tipo. El escaneo empieza solo y el catálogo se va llenando mientras dura.
 
 - **Películas**: una película por carpeta o archivo. Si hay varias versiones (por ejemplo 1080p y 4K), Velora las agrupa
   en una sola ficha y comparte el progreso entre ellas.

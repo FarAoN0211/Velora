@@ -4,7 +4,8 @@
 
 1. Descarga el código y ejecuta `docker compose up -d --build` desde la raíz. Requiere Compose2.20 o superior. No exige Python, `.env` ni claves compartidas: el servicio init crea una contraseña aleatoria y persistente en el volumen credentials; PostgreSQL y Velora la leen como archivo.
 2. Abre `http://IP_DE_TU_SERVIDOR:8640` y consulta `docker compose logs server` para el código inicial. Crea el administrador y añade tus bibliotecas.
-3. Para usar tus carpetas, copia opcionalmente `deploy/.env.example` a `deploy/.env`, con permisos0600. Define `VELORA_MEDIA_PATH` como ruta absoluta de tu carpeta de medios y repite `docker compose up -d --build`. Dentro del contenedor aparecerá en `/media`, en solo lectura. Los archivos deben ser legibles por UID1000/GID100. Por defecto se monta la carpeta `media` del código descargado.
+3. En Linux, el explorador muestra las carpetas del servidor mediante `/host`: por ejemplo, `/home/tu-usuario/Vídeos` aparece como `/host/home/tu-usuario/Vídeos`, y un disco en `/mnt/Disco` aparece como `/host/mnt/Disco`. No son las carpetas del teléfono o del navegador. El acceso es de solo lectura y conserva los permisos del sistema. El montaje anterior `/media` también se conserva para las bibliotecas existentes.
+   Para limitar el acceso a una carpeta concreta, copia `deploy/.env.example` a `deploy/.env`, con permisos0600, y define `VELORA_HOST_PATH=/ruta/a/tus/medios`. Aparecerá como `/host`; solo se mostrarán sus subcarpetas. `VELORA_MEDIA_PATH` controla el montaje adicional `/media`. Repite `docker compose up -d` después de cambiar montajes. No hace falta recompilar. Si el propietario de los archivos no es UID1000/GID100, configura `VELORA_UID` y `VELORA_GID` o concede lectura y acceso a directorios al usuario de Velora, sin hacer públicos los archivos. Los enlaces que apuntan fuera del montaje deben sustituirse por un montaje de la carpeta de destino. En Docker Desktop, comparte primero las unidades o carpetas desde sus ajustes.
 4. Configura tus propias API desde Metadatos. Una instalación nueva no importa las claves de ninguna otra persona. Las fuentes son opcionales y no cambian los estilos de la interfaz.
 
 `database` conserva PostgreSQL; `config` contiene imágenes, caché y secretos de la aplicación; `backups` las copias; `credentials` el secreto de conexión a PostgreSQL. No publiques ninguno. Los nombres mantienen el prefijo del proyecto Compose (`velora` por defecto). No uses `down -v` salvo que quieras borrar los datos.
@@ -28,6 +29,10 @@ docker compose --env-file deploy/.env -f deploy/compose.yaml -f deploy/compose.i
 ```
 
 La detección del servidor comprueba la disponibilidad del codificador. Una GPU presente no garantiza que admita cada códec, profundidad o HDR. Ajusta resolución/bitrate y concurrencia en Reproducción. La reproducción directa conserva el archivo original. En equipos ARM la imagen se compila en la arquitectura anfitriona, pero no se ha validado aquí todo el flujo ni hay aceleración ARM configurada.
+
+## APK público
+
+Descarga el APK firmado desde [GitHub Releases](https://github.com/FarAoN0211/Velora/releases/latest). Sirve para móvil, tablet y Android TV; pide tu servidor al abrirlo y no incluye cuentas ni claves de proveedores. La firma privada nunca se distribuye. Consulta [Android y OTA](../clientes/android/README.md) para ofrecer las actualizaciones desde tu propio servidor.
 
 ## Bibliotecas remotas
 

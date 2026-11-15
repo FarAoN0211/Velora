@@ -2,7 +2,7 @@
 
 Servidor multimedia para instalar en tu propio equipo y reproducir tus películas y series desde la web o Android (móvil, tablet y TV). Tus bibliotecas, cuentas, progreso y configuración viven en tu servidor. No necesita una cuenta central de Velora.
 
-**Versión 0.22.1 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
+**Versión 0.22.2 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
 
 ## Instalación con Docker Compose
 
@@ -19,9 +19,9 @@ Abre `http://IP_DE_TU_SERVIDOR:8640`. Consulta el código de instalación inicia
 docker compose logs server
 ```
 
-Completa el asistente y crea tu administrador. El código inicial no es el código de seis dígitos para vincular dispositivos. Después añade tus carpetas desde **Perfil → Panel de control → Bibliotecas**; las rutas visibles dentro del contenedor empiezan por `/media`.
+Completa el asistente y crea tu administrador. El código inicial no es el código de seis dígitos para vincular dispositivos. Después añade tus carpetas desde **Perfil → Panel de control → Bibliotecas**; las carpetas del servidor aparecen bajo `/host` (por ejemplo `/host/home` y `/host/mnt`), en solo lectura. El montaje `/media` se conserva. Consulta cómo restringir las carpetas y ajustar permisos en la [guía de instalación](docs/installation.md).
 
-No necesitas crear un `.env` ni ejecutar Python para instalar. La contraseña de PostgreSQL se genera automáticamente y se conserva en un volumen privado `credentials`; los siguientes arranques reutilizan la misma. Para montar tus carpetas, copia opcionalmente `deploy/.env.example` a `deploy/.env`, ajusta `VELORA_MEDIA_PATH` y repite el comando. Si ya tenías `deploy/.env`, se sigue leyendo y se conserva su contraseña de base de datos.
+No necesitas crear un `.env` ni ejecutar Python para instalar. La contraseña de PostgreSQL se genera automáticamente y se conserva en un volumen privado `credentials`; los siguientes arranques reutilizan la misma. Para restringir el explorador o añadir un montaje de medios concreto, copia opcionalmente `deploy/.env.example` a `deploy/.env`, ajusta `VELORA_HOST_PATH` o `VELORA_MEDIA_PATH` y repite el comando. Si ya tenías `deploy/.env`, se sigue leyendo y se conserva su contraseña de base de datos.
 
 La contraseña de PostgreSQL es propia de cada instalación. La clave maestra y el código inicial se generan en el primer arranque. **Este repositorio no contiene cuentas, claves API, tokens, bibliotecas ni credenciales del autor.**
 
@@ -57,6 +57,7 @@ No es necesario habilitarlos todos. No prometemos acceso gratuito ilimitado ni c
 - [Instalación, almacenamiento, actualizaciones y copias](docs/installation.md)
 - [Configuración de proveedores](docs/providers.md)
 - [Cuentas y hogares](docs/manual/03-cuentas-y-hogares.md) y [PIN, bloqueo y privacidad](docs/manual/04-pin-bloqueo-privacidad.md)
+- [Descargar APK firmado para móvil y TV](https://github.com/FarAoN0211/Velora/releases/latest)
 - [Android, firma propia y OTA](clientes/android/README.md)
 - [Seguridad y despliegue con HTTPS](SECURITY.md)
 - [Desarrollo y pruebas](CONTRIBUTING.md)
@@ -81,4 +82,4 @@ docker compose up -d --build
 
 Conserva `deploy/.env` si lo tenías, tus volúmenes y las rutas de los medios. No uses `down -v` para actualizar. El archivo Compose de la raíz reutiliza los servicios, nombre del proyecto y volúmenes anteriores; también sigue funcionando el comando antiguo con `--env-file deploy/.env -f deploy/compose.yaml`.
 
-La versión0.22.1 corrige una omisión en el paquete inicial: faltaba la configuración PostCSS y Tailwind no generaba sus utilidades. Se incluye la configuración completa y la compilación comprueba los estilos de web y TV. No se necesita borrar la base de datos, volver a crear usuarios ni reescanear bibliotecas para aplicar esta corrección.
+La versión0.22.2 corrige una omisión en el paquete inicial: faltaba la configuración PostCSS y Tailwind no generaba sus utilidades. Se incluye la configuración completa y la compilación comprueba los estilos de web y TV. No se necesita borrar la base de datos, volver a crear usuarios ni reescanear bibliotecas para aplicar esta corrección.

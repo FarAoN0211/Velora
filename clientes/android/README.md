@@ -2,6 +2,12 @@
 
 Un APK para móvil, tablet y TV Box (Android6 o superior). La navegación carga la web de tu servidor; en TV, Media3 proporciona el reproductor nativo. Móvil utiliza el reproductor web y solicita pantalla completa cuando la plataforma lo permite.
 
+## Descargar sin compilar
+
+El [APK oficial firmado](https://github.com/FarAoN0211/Velora/releases/latest) sirve para móvil, tablet y Android TV. No necesitas compilar ni obtener una clave de firma para instalarlo. La clave privada del autor no se publica; el APK conserva la misma firma entre versiones.
+
+Para ofrecer OTA en tu servidor, descarga de esa misma release el APK y `velora.json` y cópialos juntos en `dist/ota` (o en tu `VELORA_OTA_PATH`). Conserva sus nombres y no cambies el SHA256 del anuncio. El contenedor ya monta esa carpeta; no hace falta recompilarlo. Las actualizaciones se sirven desde tu servidor, sin acceso al servidor del autor. Las nuevas versiones se importan de igual forma.
+
 ## Servidor propio
 
 Al instalar por primera vez se pide la dirección de **tu servidor**. No existe una dirección personal preconfigurada. Admite direcciones de la red local por HTTP (por ejemplo `192.168.1.10:8640`) y cualquier dirección HTTPS con certificado válido (por ejemplo `https://velora.tu-dominio.example`, con Velora en la raíz del dominio). Sin cifrar solo se acepta la red local; una dirección escrita sin `http://` ni `https://` se toma como HTTP si es local y como HTTPS si no lo es. Conserva la dirección guardada al actualizar. Si vienes de una versión antigua que utilizaba la dirección predeterminada sin guardarla, esta actualización te pedirá introducirla una vez; las cookies de sesión del mismo servidor se conservan. Cambiar de servidor se ofrece al fallar la conexión; las sesiones y QR no se transfieren entre servidores.

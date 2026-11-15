@@ -1,17 +1,13 @@
 name: velora
 x-app: &app
-  image: velora:${VELORA_VERSION:-0.22.1}
-  build:
-    context: ..
-    dockerfile: deploy/Dockerfile
-    args:
-      VERSION: ${VELORA_VERSION:-0.22.1}
+  image: velora:${VELORA_VERSION:-0.22.2}
+  user: ${VELORA_UID:-1000}:${VELORA_GID:-100}
   environment: &environment
     VELORA_DATABASE_URL: ${VELORA_DATABASE_URL:-}
     VELORA_CONFIG_DIR: /config
     VELORA_BACKUP_DIR: /backups
     VELORA_WEB_DIR: /usr/share/velora/web
-    VELORA_MEDIA_ROOTS: /media
+    VELORA_MEDIA_ROOTS: /media,/host
     VELORA_MIN_FREE_GB: ${VELORA_MIN_FREE_GB:-5}
     VELORA_SECURE_COOKIES: ${VELORA_SECURE_COOKIES:-false}
     VELORA_PUBLIC_URLS: ${VELORA_PUBLIC_URLS:-}
@@ -23,6 +19,13 @@ x-app: &app
     - config:/config
     - backups:/backups
     - ${VELORA_MEDIA_PATH:-../media}:/media:ro
+    # Navegación del servidor anfitrión; nunca permite escribir en sus archivos.
+    - type: bind
+      source: ${VELORA_HOST_PATH:-/}
+      target: /host
+      read_only: true
+      bind:
+        create_host_path: false
     - ${VELORA_OTA_PATH:-../dist/ota}:/usr/share/velora/web/ota:ro
   depends_on:
     init:
@@ -61,6 +64,11 @@ services:
     restart: unless-stopped
   server:
     <<: *app
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        VERSION: ${VELORA_VERSION:-0.22.2}
     command: [serve]
     ports:
       - ${VELORA_BIND:-0.0.0.0}:${VELORA_PORT:-8640}:8640

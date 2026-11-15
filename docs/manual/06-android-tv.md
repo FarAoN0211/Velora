@@ -5,11 +5,9 @@ la TV, usa además un reproductor propio para el mando y para reproducir más fo
 
 ## 1. Conseguir el APK
 
-Velora no se publica en tiendas. Quien administra el servidor compila y firma su propia app
-([instrucciones](../../clientes/android/README.md)) y la publica en su servidor, que la sirve en
-`http://IP_DE_TU_SERVIDOR:8640/ota/` como `velora-CÓDIGO.apk` (por ejemplo `velora-28.apk`).
+Descarga el APK oficial firmado desde [GitHub Releases](https://github.com/FarAoN0211/Velora/releases/latest). Es el mismo archivo para móvil, tablet y TV Box y no trae ningún servidor personal preconfigurado. También puedes compilar tu propia distribución ([instrucciones](../../clientes/android/README.md)). Para ofrecer OTA desde tu servidor, coloca el APK y su anuncio `velora.json` en `dist/ota`.
 
-- **Móvil o tablet**: abre esa dirección en el navegador, descarga el APK y ábrelo. Android pedirá permiso para instalar
+- **Móvil o tablet**: abre la página de Releases en el navegador, descarga el APK y ábrelo. Android pedirá permiso para instalar
   aplicaciones de ese origen.
 - **TV Box / Android TV**: copia el APK con un pendrive o descárgalo con un gestor de archivos o un navegador para TV, y
   ábrelo. Android pedirá el mismo permiso.

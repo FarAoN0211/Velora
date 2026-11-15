@@ -51,11 +51,15 @@ export function FolderPicker({
             <ChevronLeft aria-hidden className="h-4 w-4" />
           </button>
         )}
-        <span className="truncate">{dir ? crumbs.slice(-3).join(' › ') : 'Carpetas de medios'}</span>
+        <span className="truncate">{dir ? crumbs.slice(-3).join(' › ') : 'Carpetas del servidor'}</span>
       </div>
+      {!dir && <p className="px-1 text-xs text-text-muted">
+        Las rutas /host corresponden a las carpetas de tu servidor (por ejemplo, /host/home o /host/mnt).
+        El montaje /media sigue disponible. Solo se muestran carpetas accesibles con los permisos del servidor.
+      </p>}
       {error && <p className="px-1 text-sm text-danger">{error}</p>}
       {!data && !error && <p className="px-1 text-sm text-text-muted">Leyendo…</p>}
-      {data && data.folders.length === 0 && <p className="px-1 text-sm text-text-muted">No hay subcarpetas.</p>}
+      {data && data.folders.length === 0 && <p className="px-1 text-sm text-text-muted">No hay subcarpetas accesibles. Comprueba el montaje y los permisos de lectura en Docker.</p>}
       {data && data.folders.length > 0 && (
         <ul role="listbox" aria-label="Carpetas" className="flex max-h-64 flex-col overflow-y-auto">
           {data.folders.map((f) => {
@@ -79,6 +83,7 @@ export function FolderPicker({
                     <Folder aria-hidden className="h-4 w-4 shrink-0 text-text-muted" />
                   )}
                   <span className="truncate">{f.name}</span>
+                  <span className="ml-auto max-w-[45%] truncate text-xs text-text-subtle" title={f.path}>{f.path}</span>
                   {taken && <span className="ml-auto shrink-0 text-xs text-text-subtle">ya en una biblioteca</span>}
                 </button>
                 <button
