@@ -22,13 +22,13 @@ replacements = {}
 if os.environ.get('VELORA_EXPORT_REPLACEMENTS'):
     replacements = json.loads(Path(os.environ['VELORA_EXPORT_REPLACEMENTS']).read_text(encoding='utf-8'))
 files = [
- '.gitignore.public','README.md','LICENSE','SECURITY.md','CONTRIBUTING.md','Makefile','.dockerignore',
+ 'compose.yaml','.gitignore.public','README.md','LICENSE','SECURITY.md','CONTRIBUTING.md','Makefile','.dockerignore',
  'web/package.json','web/package-lock.json','web/index.html','web/tsconfig.json',
- 'web/tailwind.config.cjs','web/tailwind.preset.cjs','web/vite.config.ts',
+ 'web/postcss.config.cjs','web/scripts/check-built-css.mjs','web/tailwind.config.cjs','web/tailwind.preset.cjs','web/vite.config.ts',
  'server/go.mod','server/go.sum','deploy/Dockerfile','deploy/compose.yaml',
  'deploy/compose.intel.yaml','deploy/compose.dev.yaml','deploy/.env.example',
- 'deploy/configure.py','deploy/dev-go/Dockerfile','deploy/dev-go/smoke.sh',
- 'docs/installation.md','docs/providers.md','docs/households.md','docs/licencias.md',
+ 'deploy/init-secrets.sh','deploy/start-velora.sh','deploy/configure.py','deploy/dev-go/Dockerfile','deploy/dev-go/smoke.sh',
+ 'docs/distribution-review.md','docs/installation.md','docs/providers.md','docs/households.md','docs/licencias.md',
  'replica/design/tokens.css','replica/design/tailwind.preset.cjs',
  'clientes/android/README.md','clientes/android/build.gradle.kts','clientes/android/settings.gradle.kts',
  'clientes/android/app/build.gradle.kts','clientes/android/gradle.properties',

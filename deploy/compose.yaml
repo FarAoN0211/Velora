@@ -1,13 +1,13 @@
 name: velora
 x-app: &app
-  image: velora:${VELORA_VERSION:-0.22.0}
+  image: velora:${VELORA_VERSION:-0.22.1}
   build:
     context: ..
     dockerfile: deploy/Dockerfile
     args:
-      VERSION: ${VELORA_VERSION:-0.22.0}
+      VERSION: ${VELORA_VERSION:-0.22.1}
   environment: &environment
-    VELORA_DATABASE_URL: postgres://velora:${VELORA_DB_PASSWORD:?Ejecuta python3 deploy/configure.py primero}@db:5432/velora?sslmode=disable
+    VELORA_DATABASE_URL: ${VELORA_DATABASE_URL:-}
     VELORA_CONFIG_DIR: /config
     VELORA_BACKUP_DIR: /backups
     VELORA_WEB_DIR: /usr/share/velora/web
@@ -19,23 +19,39 @@ x-app: &app
     VELORA_TZ: ${VELORA_TZ:-Europe/Madrid}
     VELORA_MAX_REMUX: ${VELORA_MAX_REMUX:-2}
   volumes:
+    - credentials:/run/velora-secrets:ro
     - config:/config
     - backups:/backups
     - ${VELORA_MEDIA_PATH:-../media}:/media:ro
     - ${VELORA_OTA_PATH:-../dist/ota}:/usr/share/velora/web/ota:ro
   depends_on:
+    init:
+      condition: service_completed_successfully
     db:
       condition: service_healthy
   restart: unless-stopped
 services:
+  init:
+    image: alpine:3.23
+    entrypoint: [/bin/sh, /bootstrap/init-secrets.sh]
+    environment:
+      VELORA_DB_PASSWORD: ${VELORA_DB_PASSWORD:-}
+    volumes:
+      - credentials:/run/velora-secrets
+      - ./init-secrets.sh:/bootstrap/init-secrets.sh:ro
+    restart: "no"
   db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: velora
       POSTGRES_DB: velora
-      POSTGRES_PASSWORD: ${VELORA_DB_PASSWORD:?Ejecuta python3 deploy/configure.py primero}
+      POSTGRES_PASSWORD_FILE: /run/velora-secrets/db_password
     volumes:
       - database:/var/lib/postgresql/data
+      - credentials:/run/velora-secrets:ro
+    depends_on:
+      init:
+        condition: service_completed_successfully
     healthcheck:
       test: [CMD-SHELL, pg_isready -U velora -d velora]
       interval: 5s
@@ -55,6 +71,7 @@ services:
     mem_limit: 1536m
     cpus: 2
 volumes:
+  credentials:
   database:
   config:
   backups:

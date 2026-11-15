@@ -2,28 +2,28 @@
 
 Servidor multimedia para instalar en tu propio equipo y reproducir tus películas y series desde la web o Android (móvil, tablet y TV). Tus bibliotecas, cuentas, progreso y configuración viven en tu servidor. No necesita una cuenta central de Velora.
 
-**Versión 0.22.0 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
+**Versión 0.22.1 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
 
 ## Instalación con Docker Compose
 
-Necesitas Docker Engine con Compose v2, Python 3 para generar la configuración y espacio para PostgreSQL, imágenes, caché y conversiones. La compilación descarga dependencias; el servidor necesita acceso a los proveedores que habilites. Los archivos pueden estar en discos locales o montajes que gestiones tú.
+Necesitas Docker Engine con Compose v2.20 o superior y espacio para PostgreSQL, imágenes, caché y conversiones. La compilación descarga dependencias; el servidor necesita acceso a los proveedores que habilites. Los archivos pueden estar en discos locales o montajes que gestiones tú.
 
 ```sh
 # Desde la carpeta del código descargado de este repositorio:
-python3 deploy/configure.py
-# Edita deploy/.env: VELORA_MEDIA_PATH debe apuntar a TU carpeta de medios.
-docker compose --env-file deploy/.env -f deploy/compose.yaml up -d --build
+docker compose up -d --build
 ```
 
 Abre `http://IP_DE_TU_SERVIDOR:8640`. Consulta el código de instalación inicial en tu servidor:
 
 ```sh
-docker compose --env-file deploy/.env -f deploy/compose.yaml logs server
+docker compose logs server
 ```
 
 Completa el asistente y crea tu administrador. El código inicial no es el código de seis dígitos para vincular dispositivos. Después añade tus carpetas desde **Perfil → Panel de control → Bibliotecas**; las rutas visibles dentro del contenedor empiezan por `/media`.
 
-La contraseña de PostgreSQL se genera aleatoriamente en cada instalación. La clave maestra y el código inicial se generan en el primer arranque. **Este repositorio no contiene cuentas, claves API, tokens, bibliotecas ni credenciales del autor.**
+No necesitas crear un `.env` ni ejecutar Python para instalar. La contraseña de PostgreSQL se genera automáticamente y se conserva en un volumen privado `credentials`; los siguientes arranques reutilizan la misma. Para montar tus carpetas, copia opcionalmente `deploy/.env.example` a `deploy/.env`, ajusta `VELORA_MEDIA_PATH` y repite el comando. Si ya tenías `deploy/.env`, se sigue leyendo y se conserva su contraseña de base de datos.
+
+La contraseña de PostgreSQL es propia de cada instalación. La clave maestra y el código inicial se generan en el primer arranque. **Este repositorio no contiene cuentas, claves API, tokens, bibliotecas ni credenciales del autor.**
 
 ## Funciones
 
@@ -71,3 +71,14 @@ La compatibilidad de vídeo, HDR, sonido multicanal, pantalla completa y subtít
 ## Licencia y atribución
 
 Código bajo [GPL-3.0-or-later](LICENSE). Al distribuir versiones modificadas debes cumplir la licencia y ofrecer el código correspondiente. Las dependencias, marcas e imágenes de terceros conservan sus propias condiciones. Velora no está afiliado a TMDB, TheTVDB, Fanart.tv, OMDb u OpenSubtitles. Consulta [las condiciones de TMDB](https://developer.themoviedb.org/docs/faq) y las de las otras fuentes antes de distribuir o explotar servicios basados en sus datos.
+
+## Actualizar una instalación existente
+
+```sh
+git pull --ff-only
+docker compose up -d --build
+```
+
+Conserva `deploy/.env` si lo tenías, tus volúmenes y las rutas de los medios. No uses `down -v` para actualizar. El archivo Compose de la raíz reutiliza los servicios, nombre del proyecto y volúmenes anteriores; también sigue funcionando el comando antiguo con `--env-file deploy/.env -f deploy/compose.yaml`.
+
+La versión0.22.1 corrige una omisión en el paquete inicial: faltaba la configuración PostCSS y Tailwind no generaba sus utilidades. Se incluye la configuración completa y la compilación comprueba los estilos de web y TV. No se necesita borrar la base de datos, volver a crear usuarios ni reescanear bibliotecas para aplicar esta corrección.

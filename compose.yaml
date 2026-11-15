@@ -1,0 +1,5 @@
+# Ejecuta docker compose up -d --build desde esta carpeta.
+# include conserva las rutas relativas y carga deploy/.env si ya existe.
+name: velora
+include:
+  - deploy/compose.yaml

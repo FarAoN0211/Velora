@@ -2,13 +2,14 @@
 
 ## Configuración inicial
 
-1. Descarga el código y ejecuta `python3 deploy/configure.py`. Este comando crea `deploy/.env` con permisos 0600 y una contraseña PostgreSQL aleatoria; no pisa una configuración existente.
-2. Edita `VELORA_MEDIA_PATH` con la ruta absoluta de tu carpeta de películas/series. El contenedor la monta en `/media` **solo para lectura**. La carpeta y sus archivos deben ser legibles por UID1000/GID100; puedes usar ACL o permisos de grupo, sin dar escritura a Velora.
-3. Inicia `docker compose --env-file deploy/.env -f deploy/compose.yaml up -d --build`.
-4. Abre tu dirección y consulta `docker compose --env-file deploy/.env -f deploy/compose.yaml logs server` para el código inicial. Crea el administrador y añade bibliotecas por separado, por ejemplo `/media/Peliculas` y `/media/Series`.
-5. Configura tus propias API desde Metadatos. Una instalación nueva no importa las de ninguna otra persona.
+1. Descarga el código y ejecuta `docker compose up -d --build` desde la raíz. Requiere Compose2.20 o superior. No exige Python, `.env` ni claves compartidas: el servicio init crea una contraseña aleatoria y persistente en el volumen credentials; PostgreSQL y Velora la leen como archivo.
+2. Abre `http://IP_DE_TU_SERVIDOR:8640` y consulta `docker compose logs server` para el código inicial. Crea el administrador y añade tus bibliotecas.
+3. Para usar tus carpetas, copia opcionalmente `deploy/.env.example` a `deploy/.env`, con permisos0600. Define `VELORA_MEDIA_PATH` como ruta absoluta de tu carpeta de medios y repite `docker compose up -d --build`. Dentro del contenedor aparecerá en `/media`, en solo lectura. Los archivos deben ser legibles por UID1000/GID100. Por defecto se monta la carpeta `media` del código descargado.
+4. Configura tus propias API desde Metadatos. Una instalación nueva no importa las claves de ninguna otra persona. Las fuentes son opcionales y no cambian los estilos de la interfaz.
 
-`database` conserva PostgreSQL; `config` contiene imágenes, caché y secretos de ESTA instalación; `backups` contiene las copias. No publiques ninguno. Los volúmenes llevan el prefijo del proyecto Compose. No uses `down -v` salvo que quieras borrar los datos.
+`database` conserva PostgreSQL; `config` contiene imágenes, caché y secretos de la aplicación; `backups` las copias; `credentials` el secreto de conexión a PostgreSQL. No publiques ninguno. Los nombres mantienen el prefijo del proyecto Compose (`velora` por defecto). No uses `down -v` salvo que quieras borrar los datos.
+
+`python3 deploy/configure.py` sigue disponible como ayuda opcional para crear la plantilla de configuración y carpetas. No cambia ni genera otra contraseña si Velora ya se inició automáticamente. Si vienes de una instalación anterior, conserva tu `deploy/.env` original: el include de Compose lo carga, y init conserva ese mismo valor en credentials para seguir accediendo a la base existente. No borres ni sustituyas la contraseña de una base ya inicializada.
 
 ## Parámetros
 
@@ -34,15 +35,15 @@ Velora no administra tus cuentas Telegram ni monta Teldrive. Si ya tienes un mon
 
 ## Actualizar
 
-Conserva el código y el tag anteriores. Realiza una copia desde el panel y una copia protegida de `deploy/.env` y del volumen `config`, incluida su carpeta `secrets`. Obtén la nueva versión y ejecuta el mismo comando `up -d --build`. Las migraciones se aplican automáticamente; una versión anterior podría no entender el esquema nuevo. Para volver atrás tras una migración incompatible restaura la copia en una instalación aislada y usa la versión correspondiente. No restaures encima de una reproducción activa.
+Conserva el código y el tag anteriores. Realiza una copia desde el panel y una copia protegida de `deploy/.env` y del volumen `config`, incluida su carpeta `secrets`, y del volumen `credentials`. Obtén la nueva versión y ejecuta el mismo comando `up -d --build`. Las migraciones se aplican automáticamente; una versión anterior podría no entender el esquema nuevo. Para volver atrás tras una migración incompatible restaura la copia en una instalación aislada y usa la versión correspondiente. No restaures encima de una reproducción activa.
 
 Las copias ordinarias de la aplicación no incluyen todos los secretos de instalación. Una copia de PostgreSQL sola no basta para reconstruir la configuración. Guarda las claves en un destino privado cifrado y prueba periódicamente una restauración.
 
 ## Diagnóstico
 
 ```sh
-docker compose --env-file deploy/.env -f deploy/compose.yaml ps
-docker compose --env-file deploy/.env -f deploy/compose.yaml logs --tail=100 server worker
+docker compose ps
+docker compose logs --tail=100 server worker
 curl -f http://IP_DE_TU_SERVIDOR:8640/healthz
 ```
 

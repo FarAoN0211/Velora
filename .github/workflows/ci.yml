@@ -42,3 +42,20 @@ jobs:
       - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - working-directory: clientes/android
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug
+
+  distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Exportar sin datos privados y comprobar la web exportada
+        run: |
+          python3 scripts/export_public.py "$RUNNER_TEMP/velora-export"
+          python3 scripts/audit_public.py "$RUNNER_TEMP/velora-export"
+          npm --prefix "$RUNNER_TEMP/velora-export/web" ci
+          npm --prefix "$RUNNER_TEMP/velora-export/web" run tokens:check
+          npm --prefix "$RUNNER_TEMP/velora-export/web" run build
+      - name: Validar el arranque sin configuración previa
+        run: docker compose config --quiet

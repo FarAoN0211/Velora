@@ -7,10 +7,10 @@ pasos detallados, los parámetros y cómo actualizar están en [Instalar y mante
 resumen:
 
 ```sh
-python3 deploy/configure.py            # crea deploy/.env con una contraseña aleatoria de PostgreSQL
-# edita deploy/.env: VELORA_MEDIA_PATH = la carpeta de tus películas y series
-docker compose --env-file deploy/.env -f deploy/compose.yaml up -d --build
+docker compose up -d --build
 ```
+
+No exige un archivo `.env` previo: la contraseña de PostgreSQL se genera en un volumen privado y se conserva. Para personalizar las carpetas, copia `deploy/.env.example` a `deploy/.env`, ajusta `VELORA_MEDIA_PATH` y repite el comando. Conserva tu `.env` si actualizas desde una versión anterior.
 
 Velora monta tu carpeta de medios **solo para lectura**: nunca modifica ni borra tus archivos.
 
@@ -18,7 +18,7 @@ Velora monta tu carpeta de medios **solo para lectura**: nunca modifica ni borra
 
 1. Abre `http://IP_DE_TU_SERVIDOR:8640` en un navegador.
 2. Consulta el **código de instalación** en el registro del servidor
-   (`docker compose --env-file deploy/.env -f deploy/compose.yaml logs server`). No es el código de seis dígitos de los
+   (`docker compose logs server`). No es el código de seis dígitos de los
    dispositivos.
 3. Elige el nombre del servidor y el idioma, y crea la cuenta de administrador (el usuario no puede llamarse `admin`
    ni `root`; la contraseña necesita al menos 10 caracteres).

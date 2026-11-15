@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/check-built-css.mjs",
     "typecheck": "tsc --noEmit",
     "tokens:sync": "cp ../replica/design/tokens.css src/styles/tokens.css && cp ../replica/design/tailwind.preset.cjs tailwind.preset.cjs",
     "tokens:check": "cmp ../replica/design/tokens.css src/styles/tokens.css && cmp ../replica/design/tailwind.preset.cjs tailwind.preset.cjs"
