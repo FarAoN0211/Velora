@@ -1,0 +1,60 @@
+name: velora
+x-app: &app
+  image: velora:${VELORA_VERSION:-0.22.0}
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+    args:
+      VERSION: ${VELORA_VERSION:-0.22.0}
+  environment: &environment
+    VELORA_DATABASE_URL: postgres://velora:${VELORA_DB_PASSWORD:?Ejecuta python3 deploy/configure.py primero}@db:5432/velora?sslmode=disable
+    VELORA_CONFIG_DIR: /config
+    VELORA_BACKUP_DIR: /backups
+    VELORA_WEB_DIR: /usr/share/velora/web
+    VELORA_MEDIA_ROOTS: /media
+    VELORA_MIN_FREE_GB: ${VELORA_MIN_FREE_GB:-5}
+    VELORA_SECURE_COOKIES: ${VELORA_SECURE_COOKIES:-false}
+    VELORA_PUBLIC_URLS: ${VELORA_PUBLIC_URLS:-}
+    VELORA_TRUSTED_PROXIES: ${VELORA_TRUSTED_PROXIES:-}
+    VELORA_TZ: ${VELORA_TZ:-Europe/Madrid}
+    VELORA_MAX_REMUX: ${VELORA_MAX_REMUX:-2}
+  volumes:
+    - config:/config
+    - backups:/backups
+    - ${VELORA_MEDIA_PATH:-../media}:/media:ro
+    - ${VELORA_OTA_PATH:-../dist/ota}:/usr/share/velora/web/ota:ro
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: velora
+      POSTGRES_DB: velora
+      POSTGRES_PASSWORD: ${VELORA_DB_PASSWORD:?Ejecuta python3 deploy/configure.py primero}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U velora -d velora]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    mem_limit: 512m
+    restart: unless-stopped
+  server:
+    <<: *app
+    command: [serve]
+    ports:
+      - ${VELORA_BIND:-0.0.0.0}:${VELORA_PORT:-8640}:8640
+    mem_limit: 2g
+  worker:
+    <<: *app
+    command: [worker]
+    mem_limit: 1536m
+    cpus: 2
+volumes:
+  database:
+  config:
+  backups:

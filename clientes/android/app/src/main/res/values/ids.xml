@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="imagen_ruta" type="id" />
+    <item name="seccion_pantalla" type="id" />
+    <item name="carta_tarjeta" type="id" />
+</resources>

@@ -1,0 +1,22 @@
+# Contexto mínimo para deploy/Dockerfile: nunca datos, secretos, cachés ni dependencias compiladas en el host.
+.git
+.dev
+entornos
+web/node_modules
+web/dist
+server/bin
+**/.env
+*.md
+!replica/design/**
+.public-release
+.public-validation
+dist
+clientes/android/.gradle
+clientes/android/build
+clientes/android/app/build
+clientes/android/local.properties
+**/*.jks
+**/*.keystore
+**/firma.properties
+.codex
+.agents

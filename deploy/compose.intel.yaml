@@ -1,0 +1,7 @@
+# Opcional: Intel VAAPI en Linux. El GID debe coincidir con el grupo del render node del host.
+services:
+  server:
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${VELORA_RENDER_GID:?Indica el GID del grupo de /dev/dri/renderD128}"

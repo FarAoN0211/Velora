@@ -1,0 +1,142 @@
+/* VELORA · tokens de diseño. GENERADO desde tokens.json y tokens.light.json: no editar a mano. */
+/* Tema oscuro por defecto; claro con [data-theme="light"] (solo web y móvil); escala de TV con [data-platform="tv"]. */
+
+:root {
+  color-scheme: dark;
+  --color-bg: #0e1116;
+  --color-surface: #161a21;
+  --color-surface-raised: #1e232c;
+  --color-surface-overlay: #252b36;
+  --color-border: #2c333f;
+  --color-border-input: #737d8c;
+  --color-text: #eceff4;
+  --color-text-muted: #a7b0bd;
+  --color-text-subtle: #8a94a3;
+  --color-accent: #8fb0ff;
+  --color-accent-strong: #b5cbff;
+  --color-on-accent: #0b1020;
+  --color-focus-ring: #ffffff;
+  --color-danger: #ff7a7a;
+  --color-on-danger: #1a0b0b;
+  --color-success: #5fd39a;
+  --color-warning: #f2c063;
+  --color-info: #7cc8ff;
+  --color-status-verified: #5fd39a;
+  --color-status-planned: #c3b5ff;
+  --color-status-unavailable: #f2c063;
+  --color-status-error: #ff7a7a;
+  --color-status-remote: #7cc8ff;
+  --color-progress-track: #3a4250;
+  --color-progress-fill: #8fb0ff;
+  --color-scrim: #05070a;
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --type-xs-size: 12px;
+  --type-xs-line: 16px;
+  --type-xs-weight: 500;
+  --type-sm-size: 14px;
+  --type-sm-line: 20px;
+  --type-sm-weight: 400;
+  --type-base-size: 16px;
+  --type-base-line: 24px;
+  --type-base-weight: 400;
+  --type-lg-size: 20px;
+  --type-lg-line: 28px;
+  --type-lg-weight: 600;
+  --type-xl-size: 28px;
+  --type-xl-line: 34px;
+  --type-xl-weight: 700;
+  --type-display-size: 40px;
+  --type-display-line: 44px;
+  --type-display-weight: 700;
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.30);
+  --shadow-pop: 0 12px 32px rgba(0,0,0,.55);
+  --shadow-focus-tv: 0 0 0 4px #ffffff, 0 16px 40px rgba(0,0,0,.60);
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --motion-ease: cubic-bezier(.2,.8,.2,1);
+  --focus-scale: 1;
+  --layout-max-content: 1600px;
+  --layout-sidebar: 248px;
+  --layout-sidebar-collapsed: 72px;
+  --layout-header: 64px;
+  --layout-bottom-nav: 64px;
+  --touch-target-min: 44px;
+  --safe-x: 0px;
+  --safe-y: 0px;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #ffffff;
+  --color-surface: #f5f6f8;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #eef0f4;
+  --color-border: #dde1e7;
+  --color-border-input: #7b8494;
+  --color-text: #12161c;
+  --color-text-muted: #4f5967;
+  --color-text-subtle: #5f6977;
+  --color-accent: #2f55d4;
+  --color-accent-strong: #1f3fa8;
+  --color-on-accent: #ffffff;
+  --color-focus-ring: #1f3fa8;
+  --color-danger: #c22f2f;
+  --color-on-danger: #ffffff;
+  --color-success: #1b7a4b;
+  --color-warning: #8a5a00;
+  --color-info: #0b6aa8;
+  --color-status-verified: #1b7a4b;
+  --color-status-planned: #5b45b8;
+  --color-status-unavailable: #8a5a00;
+  --color-status-error: #c22f2f;
+  --color-status-remote: #0b6aa8;
+  --color-progress-track: #d3d8e0;
+  --color-progress-fill: #2f55d4;
+  --color-scrim: #05070a;
+}
+
+/* Televisores: escala de 10 pies, zona segura y foco ampliado. Siempre en tema oscuro. */
+[data-platform="tv"] {
+  --type-xs-size: 22px;
+  --type-xs-line: 28px;
+  --type-xs-weight: 500;
+  --type-sm-size: 24px;
+  --type-sm-line: 32px;
+  --type-sm-weight: 400;
+  --type-base-size: 28px;
+  --type-base-line: 36px;
+  --type-base-weight: 400;
+  --type-lg-size: 34px;
+  --type-lg-line: 42px;
+  --type-lg-weight: 600;
+  --type-xl-size: 44px;
+  --type-xl-line: 52px;
+  --type-xl-weight: 700;
+  --type-display-size: 60px;
+  --type-display-line: 68px;
+  --type-display-weight: 700;
+  --safe-x: 96px;
+  --safe-y: 54px;
+  --focus-scale: 1.06;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root, [data-platform="tv"] { --motion-fast: 0ms; --motion-base: 0ms; --motion-slow: 0ms; --focus-scale: 1; }
+}

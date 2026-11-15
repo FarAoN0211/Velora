@@ -1,0 +1,113 @@
+# VELORA · entorno de DESARROLLO Y PRUEBAS (proyecto Compose "velora-dev").
+#
+# Reglas (autorizadas por el usuario el 2026-10-25):
+#   - ningún puerto publicado: todo se comunica por la red interna del proyecto;
+#   - contenedores efímeros para compilar y probar (docker compose run --rm);
+#   - no toca ningún contenedor, red, volumen ni puerto existente;
+#   - límites de recursos: el N100 comparte RAM con otros ~40 servicios.
+#
+# Uso (desde la carpeta del proyecto en el servidor):
+#   docker compose -p velora-dev -f deploy/compose.dev.yaml up -d db
+#   docker compose -p velora-dev -f deploy/compose.dev.yaml run --rm go go test ./...
+#   docker compose -p velora-dev -f deploy/compose.dev.yaml down        # -v borra también la base de pruebas
+
+name: velora-dev
+
+x-limits-go: &limits-go
+  mem_limit: 1536m
+  cpus: 2
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: velora
+      POSTGRES_PASSWORD: velora-dev-solo-pruebas   # solo desarrollo, red interna sin puertos
+      POSTGRES_DB: velora
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=30", "-c", "work_mem=4MB"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    mem_limit: 256m
+    cpus: 1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velora -d velora"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  go:
+    build: ./dev-go
+    image: velora-dev/go:e1
+    user: "${VELORA_DEV_UID:-1000}:${VELORA_DEV_GID:-1000}"
+    working_dir: /src/server
+    volumes:
+      - ..:/src
+    environment:
+      VELORA_TEST_DATABASE_URL: postgres://velora:velora-dev-solo-pruebas@db:5432/velora?sslmode=disable
+      HOME: /tmp
+    depends_on:
+      db:
+        condition: service_healthy
+    <<: *limits-go
+    profiles: ["tools"]
+
+  # Prueba de humo: el binario real escuchando en la red interna (sin publicar puertos).
+  server:
+    image: velora-dev/go:e1
+    user: "${VELORA_DEV_UID:-1000}:${VELORA_DEV_GID:-1000}"
+    working_dir: /src/server
+    command: ["/src/server/bin/velora", "serve"]
+    volumes:
+      - ..:/src
+      - ../.dev/config:/config
+      - ../.dev/backups:/backups
+      - ../.dev/media:/media:ro        # vídeos sintéticos de la prueba de humo, nunca la colección real
+    environment:
+      VELORA_DATABASE_URL: postgres://velora:velora-dev-solo-pruebas@db:5432/velora?sslmode=disable
+      VELORA_MEDIA_ROOTS: /media
+      VELORA_SECURE_COOKIES: "false"
+      VELORA_MIN_FREE_GB: "1"
+      VELORA_WEB_DIR: /src/web/dist
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+    cpus: 1
+    profiles: ["app"]
+
+  worker:
+    image: velora-dev/go:e1
+    user: "${VELORA_DEV_UID:-1000}:${VELORA_DEV_GID:-1000}"
+    working_dir: /src/server
+    command: ["/src/server/bin/velora", "worker"]
+    volumes:
+      - ..:/src
+      - ../.dev/config:/config
+      - ../.dev/backups:/backups
+      - ../.dev/media:/media:ro
+    environment:
+      VELORA_DATABASE_URL: postgres://velora:velora-dev-solo-pruebas@db:5432/velora?sslmode=disable
+      VELORA_MEDIA_ROOTS: /media
+      VELORA_MIN_FREE_GB: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+    cpus: 1
+    profiles: ["app"]
+
+  web:
+    image: node:22-alpine   # ya presente en el servidor
+    user: "${VELORA_DEV_UID:-1000}:${VELORA_DEV_GID:-1000}"
+    working_dir: /src/web
+    volumes:
+      - ..:/src
+    environment:
+      HOME: /tmp
+      npm_config_cache: /src/.dev/npm-cache
+    mem_limit: 1024m
+    cpus: 2
+    profiles: ["tools"]
+
+volumes:
+  pgdata:

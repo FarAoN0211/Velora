@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HTTP sin cifrar se permite porque en casa no suele haber certificado: Servidor.java solo lo admite para direcciones
+     de la red local. Cualquier otra dirección tiene que ser https://, con su certificado válido. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

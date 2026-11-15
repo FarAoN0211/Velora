@@ -1,0 +1,218 @@
+@import '@fontsource-variable/inter';
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--type-base-size);
+  line-height: var(--type-base-line);
+  -webkit-font-smoothing: antialiased;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* App de TV. Todo se mide en proporción al alto de la pantalla: a 960×540 y a 1280×720 se ve igual de compacto.
+   Los tokens de [data-platform="tv"] son para píxeles reales de 1080p; la TV Box da una ventana de 960×540. */
+html.tv {
+  font-size: clamp(12px, 2.6vh, 20px);
+  --type-xs-size: 0.857rem;
+  --type-xs-line: 1.143rem;
+  --type-sm-size: 0.929rem;
+  --type-sm-line: 1.286rem;
+  --type-base-size: 1rem;
+  --type-base-line: 1.429rem;
+  --type-lg-size: 1.143rem;
+  --type-lg-line: 1.571rem;
+  --type-xl-size: 1.429rem;
+  --type-xl-line: 1.857rem;
+  --type-display-size: 1.857rem;
+  --type-display-line: 2.214rem;
+}
+
+/* App de TV: nada de lo que delata a un navegador. */
+html.tv body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+html.tv input, html.tv textarea { -webkit-user-select: text; user-select: text; }
+html.tv ::-webkit-scrollbar { display: none; }
+
+/* Lateral de TV: sin sombreado. La sección abierta va en color de acento y la seleccionada, con el fondo de ese color. */
+html.tv aside nav a { background: transparent; }
+html.tv aside nav a[aria-current='page'] { color: var(--color-accent); background: transparent; }
+html.tv aside nav a:focus,
+html.tv aside nav a[aria-current='page']:focus,
+html.tv aside button:focus {
+  outline: none !important;
+  box-shadow: none;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Insignias técnicas de la ficha (components/techBadges.tsx; docs/insignias/hoja-referencia-insignias.webp). Siempre
+   oscuras, como en la hoja, en tema claro u oscuro. Todo va en em: el tamaño lo fija .vb-row (móvil y escritorio 12 px de
+   texto, 24 px de alto; en TV, 18 px de texto y 34 px de alto, legibles a 3 m en 1080p). Contraste del texto ≥ 12:1. */
+.vb-row {
+  --vb-bg: #0a0f1c;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4em;
+  font-size: 0.75rem;
+  line-height: 1;
+  width: 100%;
+  max-width: 100%;
+  /* Su contenido no ensancha la ficha: sin esto, en el móvil la fila empujaba el texto fuera de la pantalla. */
+  contain: inline-size;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 1.5em), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 1.5em), transparent);
+  padding-right: 1.5em;
+}
+.vb-row::-webkit-scrollbar { display: none; }
+.vb-row.vb-sm { font-size: 0.6875rem; gap: 0.4em; }
+html.tv .vb-row { font-size: 0.9rem; }
+/* En TV la ficha tiene sitio a la derecha de la columna de texto: la fila se alarga para caber entera. */
+html.tv .vb-row:not(.vb-sm) { width: 68vw; max-width: none; }
+html.tv .vb-row.vb-sm { font-size: 0.75rem; }
+.vb {
+  --vb-edge: #9aa7bd;
+  --vb-accent: #ffffff;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  height: 2em;
+  padding: 0 0.5em;
+  border: 0.125em solid var(--vb-edge);
+  border-radius: 0.4em;
+  background: var(--vb-bg);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 0 0.6em -0.2em color-mix(in srgb, var(--vb-edge) 70%, transparent), inset 0 0.08em 0 rgb(255 255 255 / 0.08);
+}
+.vb-main { font-weight: 800; }
+.vb-sub { font-weight: 800; color: var(--vb-accent); }
+
+/* Resolución: borde dorado y la segunda parte sobre oro, como la hoja. */
+.vb[data-c='resolution'] { --vb-edge: #e8b730; padding-right: 0; overflow: hidden; }
+.vb[data-c='resolution'] .vb-sub {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.5em;
+  background: linear-gradient(180deg, #ffd65c, #d99a14);
+  color: #1a1204;
+}
+.vb[data-c='resolution'][data-id='4k'] .vb-main,
+.vb[data-c='resolution'][data-id='8k'] .vb-main { color: #ffd65c; }
+
+/* HDR: gris para SDR, degradados para HDR10 y HDR10+, verde azulado para Dolby Vision y morado para HLG. */
+.vb[data-c='hdr'][data-id='sdr'] { --vb-edge: #b8c0cc; }
+.vb[data-c='hdr'][data-id='hdr10'],
+.vb[data-c='hdr'][data-id='hdr10plus'] {
+  border-color: transparent;
+  background: linear-gradient(var(--vb-bg), var(--vb-bg)) padding-box, linear-gradient(90deg, #ff9f1c, #ffe14d, #4ade80, #38bdf8, #c084fc) border-box;
+  --vb-edge: #ffb84d;
+}
+.vb[data-c='hdr'][data-id='hdr10plus'] { --vb-edge: #c084fc; }
+.vb-bars { display: inline-block; width: 1em; height: 1.05em; border-radius: 0.1em;
+  background: linear-gradient(90deg, #ef4444 0 20%, #f97316 20% 40%, #facc15 40% 60%, #22c55e 60% 80%, #3b82f6 80%); }
+.vb[data-c='hdr'][data-id='dovi'] { --vb-edge: #2dd4bf; }
+.vb .vb-brand { font-size: 0.78em; letter-spacing: 0.06em; }
+.vb[data-c='hdr'][data-id='hlg'] { --vb-edge: #a855f7; }
+
+/* Códec de vídeo: plateado; HEVC en verde, VVC en azul, AV1 con su degradado y el 9 de VP9 en verde. */
+.vb[data-c='video'] { --vb-edge: #c7cfdb; --vb-accent: #c7cfdb; }
+.vb[data-c='video'][data-id='hevc'] { --vb-edge: #4ade80; --vb-accent: #4ade80; }
+.vb[data-c='video'][data-id='vvc'] { --vb-edge: #38bdf8; --vb-accent: #7dd3fc; }
+.vb[data-c='video'][data-id='vp9'] { gap: 0; }
+.vb[data-c='video'][data-id='vp9'] .vb-sub { color: #a3e635; }
+.vb[data-c='video'][data-id='av1'] .vb-main { background: linear-gradient(90deg, #fff 55%, #facc15 70%, #f43f5e 85%, #2dd4bf); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.vb[data-c='video'][data-id='mpeg2'] .vb-main { font-style: italic; }
+
+/* Audio: Dolby en blanco (Atmos con fondo azul), DTS con el acento naranja, AAC turquesa, FLAC verde, PCM blanco. */
+.vb[data-c='audio'] { --vb-edge: #dfe5ee; }
+.vb[data-c='audio'][data-id='atmos'] { --vb-edge: #60a5fa; background: radial-gradient(circle at 30% 20%, #1d4ed8, #0b1736 70%); }
+.vb[data-c='audio'][data-id^='dts'] { --vb-edge: #f59e0b; --vb-accent: #fbbf24; }
+.vb[data-c='audio'][data-id^='dts'] .vb-main { font-size: 1.15em; font-style: italic; letter-spacing: -0.02em; text-transform: lowercase; }
+.vb[data-c='audio'][data-id^='dts'] .vb-sub { font-style: italic; }
+.vb[data-c='audio'][data-id='aac'] { --vb-edge: #2dd4bf; }
+.vb[data-c='audio'][data-id='flac'] { --vb-edge: #4ade80; }
+
+/* Canales: azul, con los puntos de los altavoces. */
+.vb[data-c='channels'] { --vb-edge: #7dd3fc; }
+.vb-dots { display: inline-flex; gap: 0.15em; }
+.vb-dots i { display: block; width: 0.32em; height: 0.32em; border-radius: 50%; background: #fff; }
+.vb[data-c='channels'][data-id='7.1.4'] .vb-dots i { background: #38bdf8; }
+
+/* Extras: FPS y bits en blanco con su icono, 3D en azul, IMAX en turquesa. */
+.vb[data-c='fps'], .vb[data-c='bitdepth'] { --vb-edge: #c7cfdb; }
+.vb-film { display: inline-block; width: 1.1em; height: 0.85em; border: 0.12em solid #fff; border-radius: 0.1em;
+  background: repeating-linear-gradient(90deg, #fff 0 0.12em, transparent 0.12em 0.3em) top / 100% 0.14em no-repeat,
+              repeating-linear-gradient(90deg, #fff 0 0.12em, transparent 0.12em 0.3em) bottom / 100% 0.14em no-repeat; }
+.vb-layers { display: inline-block; width: 1em; height: 1em; transform: rotate(45deg) scale(0.75); border-radius: 0.12em;
+  background: linear-gradient(135deg, #facc15, #22c55e 50%, #8b5cf6); box-shadow: 0.18em 0.18em 0 #ec4899; }
+.vb[data-c='bitdepth'][data-id='12'] .vb-layers { background: linear-gradient(135deg, #f472b6, #8b5cf6 50%, #22c55e); box-shadow: 0.18em 0.18em 0 #38bdf8; }
+.vb[data-c='3d'] { --vb-edge: #60a5fa; }
+.vb[data-c='3d'] .vb-main { font-size: 1.2em; font-style: italic; color: #60a5fa; }
+.vb[data-c='imax'] { --vb-edge: #67e8f9; }
+.vb[data-c='imax'] .vb-main { letter-spacing: 0.1em; }
+.vb[data-c='imax'] .vb-sub { font-size: 0.7em; font-weight: 600; letter-spacing: 0.08em; color: #e2e8f0; }
+
+/* Contenedor: gris, el menos importante, al final. */
+.vb[data-c='container'] { --vb-edge: #7c8799; }
+
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Barra de progreso indeterminada (escaneo en cola o buscando archivos). */
+@keyframes indeterminado {
+  from { left: -33%; }
+  to { left: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+
+/* Same four controls as the native TV player, including remote focus. */
+.player-control {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: var(--color-text);
+}
+.player-control:hover, .player-control:focus-visible, .player-play {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.player-control:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.player-tracks { width: auto; padding-inline: 1rem; font-size: .9375rem; white-space: nowrap; }
+@media (max-width: 360px) { .player-tracks { padding-inline: .5rem; font-size: .875rem; } }

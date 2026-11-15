@@ -1,0 +1,870 @@
+openapi: 3.1.0
+info:
+  title: VELORA API
+  version: 0.0.0-e0
+  description: |
+    API pública de VELORA (etapa E0). Cada operación declara su política de acceso en `x-velora-policy`
+    (public, user, owner o admin); un test comprueba que coincide con la del servidor y que no hay rutas sin documentar.
+    Autenticación: cookie de sesión + cabecera X-CSRF-Token (web) o `Authorization: Bearer` (clientes nativos).
+  license:
+    name: GPL-3.0-or-later
+servers:
+  - url: /
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+    cookie:
+      type: apiKey
+      in: cookie
+      name: velora_session
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        display_name: { type: string }
+        is_admin: { type: boolean }
+        has_pin: { type: boolean }
+        can_play: { type: boolean }
+        can_download: { type: boolean }
+        can_delete: { type: boolean }
+        can_remote: { type: boolean }
+        lock_profile: { type: boolean }
+    SessionResponse:
+      type: object
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        token: { type: string, description: Solo para clientes nativos }
+        csrf_token: { type: string, description: Solo para la web }
+  responses:
+    Unauthorized:
+      description: Sin sesión
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No existe o no está permitido (no se distingue)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+paths:
+  /api/v1/admin/accounts/passwordless:
+    post:
+      summary: >-
+        Crear una cuenta principal sin contraseña con el código de seis dígitos de su dispositivo, que queda autorizado.
+        No crea un hogar; con can_create_household el titular podrá crearlo desde «Mi cuenta»
+      x-velora-policy: admin
+      responses:
+        "201": {description: Cuenta creada}
+
+  /api/v1/admin/users/{id}/reset-pin:
+    post:
+      summary: >-
+        Restablecer el PIN de una cuenta principal sin contraseña, siempre sellando su historial. No se admite para
+        miembros de un hogar (403) ni para cuentas con contraseña (409)
+      x-velora-policy: admin
+      responses:
+        "200": {description: Operación completada}
+
+  /api/v1/me/household:
+    get:
+      summary: >-
+        Consultar el hogar: nombre, perfiles, dispositivos, límite de miembros (max_members, members). Al propietario,
+        además, la papelera (trash), las reproducciones simultáneas (max_streams, 0 = sin límite) y si puede añadir
+        (can_add) o ampliar (can_grow) el hogar
+      x-velora-policy: user
+      responses:
+        "200": {description: Operación completada}
+    post:
+      summary: >-
+        «Crear mi hogar»: crea «Familia de <nombre>» con la cuenta como propietaria, si el administrador le dio permiso,
+        y autoriza este dispositivo a cambiar entre sus perfiles. 403 sin permiso, 409 si ya pertenece a un hogar
+      x-velora-policy: user
+      responses:
+        "201": {description: Hogar creado}
+    patch:
+      summary: Cambiar el nombre del hogar, solo propietario
+      x-velora-policy: user
+      responses:
+        "204": {description: Guardado}
+
+  /api/v1/me/household/profiles:
+    post:
+      summary: Crear perfil familiar, solo responsable
+      x-velora-policy: user
+      responses:
+        "200": {description: Operación completada}
+
+  /api/v1/me/household/profiles/{id}:
+    patch:
+      summary: >-
+        Cambiar el nombre (display_name), desactivar o restablecer el PIN de un miembro, solo propietario. Restablecer
+        exige el PIN del propietario si lo tiene (owner_pin) y sella el historial del miembro
+      x-velora-policy: user
+      responses:
+        "200": {description: Operación completada}
+    delete:
+      summary: >-
+        Llevar un miembro a la papelera: deja de poder usarse y de reproducir al instante y no cuenta en el límite;
+        su historial se conserva 30 días. Solo propietario
+      x-velora-policy: user
+      responses:
+        "204": {description: En la papelera}
+
+  /api/v1/me/household/profiles/{id}/restore:
+    post:
+      summary: >-
+        Recuperar un miembro de la papelera con su historial (antes de 30 días). Exige un hueco libre y el permiso de
+        hogar: 429 sin hueco, 403 sin permiso, 410 si ya caducó. Solo propietario
+      x-velora-policy: user
+      responses:
+        "204": {description: Recuperado}
+
+  /api/v1/me/household/profiles/{id}/permanent:
+    delete:
+      summary: Borrar definitivamente, con su historial, un miembro que ya está en la papelera. Solo propietario
+      x-velora-policy: user
+      responses:
+        "204": {description: Borrado}
+
+  /api/v1/me/household/devices/{id}:
+    delete:
+      summary: Revocar dispositivo del hogar, solo responsable
+      x-velora-policy: user
+      responses:
+        "200": {description: Operación completada}
+
+  /api/v1/me/pin/recovery-code:
+    post:
+      summary: Generar un código de recuperación nuevo del PIN (exige el PIN actual; el anterior deja de valer)
+      x-velora-policy: user
+      responses:
+        "200": {description: Código nuevo, se muestra una sola vez}
+
+  /api/v1/auth/pin/recover:
+    post:
+      summary: >-
+        «He olvidado mi PIN»: con el código de recuperación del perfil se elige un PIN nuevo de 4 dígitos, se conserva
+        todo y se entra en el perfil. Solo para perfiles seleccionables en este dispositivo
+      x-velora-policy: user
+      responses:
+        "200": {description: Perfil abierto con PIN nuevo y código de recuperación nuevo}
+
+  /api/v1/me/unlock:
+    post:
+      summary: >-
+        Desbloquear el perfil propio en este dispositivo con su PIN. Un perfil con PIN se bloquea tras el tiempo sin
+        uso que elige su titular; bloqueado, el servidor responde 423 a todo salvo esta ruta, /me, cambiar de perfil,
+        recuperar el PIN, salir y la comprobación del catálogo
+      x-velora-policy: user
+      responses:
+        "200": {description: Desbloqueado}
+
+  /api/v1/me/activity:
+    post:
+      summary: >-
+        Aviso de uso real: interaction=true (mando, teclas, toques, clics) alarga el desbloqueo; false (app a la vista)
+        solo cuenta para la opción «siempre». Las consultas automáticas no alargan nada
+      x-velora-policy: user
+      responses:
+        "204": {description: Anotado}
+
+  /api/v1/me/pin-lock:
+    put:
+      summary: Cuándo se vuelve a pedir el PIN propio (minutes = 0 siempre, 15, 60 o 240)
+      x-velora-policy: user
+      responses:
+        "204": {description: Guardado}
+
+  /api/v1/me/history/seals:
+    get:
+      summary: Historiales sellados del perfil propio tras un restablecimiento (fecha, caducidad, número de títulos)
+      x-velora-policy: user
+      responses:
+        "200": {description: Operación completada}
+
+  /api/v1/me/history/unseal:
+    post:
+      summary: >-
+        Recuperar el historial sellado con el código de recuperación que se tenía antes del restablecimiento. Es la
+        única forma: ni el propietario ni el administrador pueden devolverlo
+      x-velora-policy: user
+      responses:
+        "200": {description: Historial devuelto}
+
+  /api/v1/me/pin:
+    put:
+      summary: >-
+        Activar, cambiar o quitar el PIN del perfil propio (4 dígitos). Exige el PIN actual o, si se ha olvidado, la
+        contraseña de la cuenta. Al activarlo o cambiarlo devuelve un código de recuperación nuevo (una sola vez)
+      x-velora-policy: user
+      responses:
+        "200": {description: Operación completada}
+
+  /api/v1/me/profiles:
+    get:
+      x-velora-policy: user
+      summary: Cuentas con sesión vigente recordada en este dispositivo, sin exponer tokens
+      responses: { '200': { description: Perfiles recordados } }
+  /api/v1/auth/switch:
+    post:
+      x-velora-policy: user
+      summary: Cambiar a una cuenta previamente autenticada en este dispositivo; requiere CSRF
+      responses: { '200': { description: Cuenta activa cambiada }, '403': { description: Cuenta sin sesión recordada o revocada } }
+  /api/v1/me/libraries/order:
+    put:
+      x-velora-policy: user
+      summary: Orden personal de bibliotecas compartido por el menú lateral y los carruseles de inicio
+      responses: { '204': { description: Orden guardado }, '422': { description: Orden duplicado o biblioteca sin acceso } }
+
+  /api/v1/auth/device:
+    post:
+      x-velora-policy: public
+      summary: Crear vinculación temporal de cinco minutos
+      responses: { '200': { description: OK } }
+
+  /api/v1/auth/device/poll:
+    post:
+      x-velora-policy: public
+      summary: Consultar y consumir autorización mediante secreto de dispositivo
+      responses: { '200': { description: OK } }
+
+  /api/v1/auth/device/inspect:
+    post:
+      x-velora-policy: user
+      summary: Ver el dispositivo asociado al código de seis dígitos
+      responses: { '200': { description: OK } }
+
+  /api/v1/auth/device/approve:
+    post:
+      x-velora-policy: user
+      summary: Autorizar dispositivo con la cuenta actual
+      responses: { '200': { description: OK } }
+
+  /api/v1/me/recovery-codes:
+    post:
+      x-velora-policy: user
+      summary: Generar códigos de recuperación tras confirmar contraseña
+      responses: { '200': { description: OK } }
+
+  /api/v1/auth/recover:
+    post:
+      x-velora-policy: public
+      summary: Restablecer contraseña con código de recuperación de un solo uso
+      responses: { '200': { description: OK } }
+
+  /api/v1/admin/users/{id}/password:
+    post:
+      x-velora-policy: admin
+      summary: Restablecer contraseña de usuario normal tras confirmar contraseña de administrador. Si la cuenta tiene PIN, su historial se sella y el PIN se quita (sealed)
+      responses: { '200': { description: OK } }
+
+  /healthz:
+    get:
+      x-velora-policy: public
+      summary: Estado del servidor y de la base de datos
+      responses:
+        '200': { description: OK }
+        '503': { description: Base de datos no disponible }
+  /api/v1/openapi.yaml:
+    get:
+      x-velora-policy: public
+      summary: Este documento
+      responses:
+        '200': { description: OK }
+  /api/v1/system/info:
+    get:
+      x-velora-policy: public
+      summary: Nombre, versión, idioma y si falta el asistente inicial (S01)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string }
+                  version: { type: string }
+                  language: { type: string }
+                  setup_required: { type: boolean }
+  /api/v1/setup:
+    post:
+      x-velora-policy: public
+      summary: Crea el primer administrador (solo si aún no existe ninguno y con el código de instalación de la consola)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [setup_code, server_name, username, display_name, password]
+              properties:
+                setup_code: { type: string, description: 'Código de un solo uso de la consola del servidor (ABCD-EFGH-JKLM)' }
+                server_name: { type: string, maxLength: 60 }
+                language: { type: string, enum: [es-ES] }
+                username: { type: string, pattern: '^[A-Za-z0-9._-]{3,32}$' }
+                display_name: { type: string, maxLength: 60 }
+                password: { type: string, minLength: 10 }
+      responses:
+        '201':
+          description: Creado; sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '403': { description: Código de instalación ausente, incorrecto o invalidado tras 10 fallos }
+        '409': { description: El servidor ya está configurado }
+        '422': { description: Datos no válidos }
+  /api/v1/auth/profiles:
+    get:
+      x-velora-policy: public
+      summary: Perfiles visibles para el selector (S02); vacío si el administrador lo desactiva
+      responses:
+        '200': { description: OK }
+  /api/v1/auth/login:
+    post:
+      x-velora-policy: public
+      summary: Inicio de sesión con contraseña
+      description: >
+        Contrato de credenciales. Una petición de navegador (Origin o Sec-Fetch-*, cabeceras que el JavaScript no puede
+        falsificar) recibe SIEMPRE cookie HttpOnly + token anti-CSRF, declare lo que declare. Sin X-Velora-Client también se
+        entrega cookie (el modo más restrictivo). Solo un cliente que se declara nativo (android, android_tv, tizen, webos,
+        dlna, kodi) y no parece navegador recibe un token Bearer en el cuerpo. X-Velora-Client describe el dispositivo; no lo
+        autentica. Si hay demasiados intentos simultáneos para el mismo usuario o IP, 503 con Retry-After.
+      parameters:
+        - in: header
+          name: X-Velora-Client
+          schema: { type: string, enum: [web, android, android_tv, tizen, webos, dlna, kodi] }
+        - in: header
+          name: X-Velora-Device-Id
+          schema: { type: string }
+        - in: header
+          name: X-Velora-Device-Name
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                user_id: { type: string, format: uuid }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionResponse' }
+        '401': { description: Usuario o contraseña incorrectos }
+  /api/v1/auth/logout:
+    post:
+      x-velora-policy: user
+      summary: Cierra la sesión actual
+      security: [{ bearer: [] }, { cookie: [] }]
+      responses:
+        '204': { description: Sesión cerrada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/me:
+    get:
+      x-velora-policy: user
+      summary: Usuario actual y sus permisos
+      security: [{ bearer: [] }, { cookie: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/v1/admin/backup:
+    post:
+      x-velora-policy: admin
+      summary: Encola una copia de seguridad verificada (D-8)
+      security: [{ bearer: [] }, { cookie: [] }]
+      responses:
+        '202': { description: En cola }
+        '409': { description: Ya hay una en curso }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/admin/backups:
+    get:
+      x-velora-policy: admin
+      summary: Copias existentes, últimos trabajos y estado del espacio
+      security: [{ bearer: [] }, { cookie: [] }]
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/NotFound' }
+  # ───────────── E1: bibliotecas, catálogo, reproducción y progreso ─────────────
+  /api/v1/libraries:
+    get:
+      x-velora-policy: user
+      summary: Bibliotecas a las que tiene acceso quien consulta (las rutas internas solo las ve el admin)
+      responses: { '200': { description: OK } }
+    post:
+      x-velora-policy: admin
+      summary: Crea una biblioteca de películas en una carpeta dentro de las raíces de medios (solo lectura) y la escanea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, path]
+              properties:
+                name: { type: string, maxLength: 60 }
+                kind: { type: string, enum: [movies] }
+                path: { type: string }
+      responses:
+        '201': { description: Creada; escaneo encolado }
+        '409': { description: Nombre o carpeta repetidos }
+        '422': { description: Carpeta fuera de las raíces de medios o inexistente }
+  /api/v1/libraries/{id}:
+    patch:
+      x-velora-policy: admin
+      summary: Renombra la biblioteca o la muestra u oculta en el menú (ocultar no revoca el acceso ni borra nada)
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' }, '409': { description: Nombre repetido } }
+    delete:
+      x-velora-policy: admin
+      summary: Retira la biblioteca (recuperable) sin borrar rutas, fichas, permisos ni historial
+      responses: { '204': { description: Retirada }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/libraries/{id}/restore:
+    post:
+      x-velora-policy: admin
+      summary: Recupera una biblioteca retirada con sus permisos, oculta del menú hasta que el administrador la muestre
+      responses: { '204': { description: Recuperada }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/libraries/{id}/purge:
+    post:
+      x-velora-policy: admin
+      summary: Borra definitivamente una biblioteca YA retirada (exige {"confirm":"BORRAR"}; nunca toca archivos)
+      responses: { '204': { description: Borrada }, '422': { description: Sin confirmar } }
+  /api/v1/libraries/{id}/paths:
+    post:
+      x-velora-policy: admin
+      summary: Añade una carpeta de origen (dentro de las raíces de medios) y encola un escaneo
+      responses: { '201': { description: Añadida }, '409': { description: Ya pertenece a una biblioteca }, '422': { description: Ruta no válida } }
+  /api/v1/libraries/{id}/paths/{pathId}:
+    delete:
+      x-velora-policy: admin
+      summary: Desvincula una carpeta (recuperable) sin borrar fichas, historial ni progreso; no puede ser la última activa
+      responses: { '204': { description: Desvinculada }, '409': { description: Es la última ruta activa } }
+  /api/v1/libraries/{id}/paths/{pathId}/restore:
+    post:
+      x-velora-policy: admin
+      summary: Recupera una carpeta desvinculada con todo su contenido y la vuelve a escanear
+      responses: { '204': { description: Recuperada }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/libraries/{id}/paths/{pathId}/purge:
+    post:
+      x-velora-policy: admin
+      summary: Borra definitivamente las fichas de una carpeta YA desvinculada (exige {"confirm":"BORRAR"}; nunca toca archivos)
+      responses: { '204': { description: Borradas }, '422': { description: Sin confirmar } }
+  /api/v1/me/libraries/{id}/menu:
+    put:
+      x-velora-policy: user
+      summary: Muestra u oculta una biblioteca con acceso en la barra lateral de quien llama ({"visible":bool}); no cambia permisos ni el inicio
+      responses: { '204': { description: Guardado }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/me/libraries/{id}/view:
+    put:
+      x-velora-policy: user
+      summary: >-
+        Fija el orden con el que quien llama ve una biblioteca ({"sort":"title|added|year|rating|runtime|last_played|resolution","reverse":bool});
+        se devuelve en /api/v1/libraries (view_sort, view_reverse) y lo usan la web y la TV al entrar
+      responses: { '204': { description: Guardado }, '404': { $ref: '#/components/responses/NotFound' }, '422': { description: Orden no válido } }
+  /api/v1/admin/library-order:
+    put:
+      x-velora-policy: admin
+      summary: Fija el orden de las bibliotecas (lista de ids)
+      responses: { '204': { description: Guardado } }
+  /api/v1/admin/users:
+    get:
+      x-velora-policy: admin
+      summary: Usuarios con las bibliotecas a las que tienen acceso
+      responses: { '200': { description: OK } }
+    post:
+      x-velora-policy: admin
+      summary: Crea un usuario normal SIN acceso a ninguna biblioteca
+      responses: { '201': { description: Creado }, '409': { description: Usuario repetido }, '422': { description: Datos no válidos } }
+  /api/v1/admin/users/{id}:
+    patch:
+      x-velora-policy: admin
+      summary: >-
+        Desactiva o reactiva una cuenta (al desactivarla se cierran sus sesiones) y fija sus límites para todo su hogar:
+        max_streams (reproducciones simultáneas; 0 sin límite, null el valor general) y max_household_members (0 a 19,
+        sin contar al responsable; 9 por defecto) y can_create_household (permiso para crear y ampliar su propio hogar;
+        retirarlo no elimina miembros). Los perfiles familiares heredan los del responsable
+      responses: { '204': { description: Guardado }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/admin/users/{id}/libraries:
+    put:
+      x-velora-policy: admin
+      summary: Fija las bibliotecas permitidas; efectivo en la siguiente petición y, en flujos abiertos, en ≤ 30 s
+      responses: { '204': { description: Guardado }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/libraries/{id}/scan:
+    post:
+      x-velora-policy: admin
+      summary: Encola un escaneo
+      responses: { '202': { description: En cola }, '409': { description: Ya hay uno en curso } }
+  /api/v1/admin/media-folders:
+    get:
+      x-velora-policy: admin
+      summary: Carpetas para elegir una biblioteca. Sin path, las de primer nivel de las raíces de medios; con path (dentro de una raíz), sus subcarpetas (explorador). Solo lectura
+      parameters:
+        - { in: query, name: path, schema: { type: string } }
+      responses: { '200': { description: OK }, '400': { description: Ruta fuera de las carpetas de medios } }
+  /api/v1/admin/metadata/tmdb:
+    get:
+      x-velora-policy: admin
+      summary: Si hay clave de TMDB configurada
+      responses: { '200': { description: OK } }
+    put:
+      x-velora-policy: admin
+      summary: Comprueba la clave contra TMDB y la guarda en /config/secrets/tmdb.key (0600)
+      responses: { '200': { description: Guardada }, '422': { description: Clave rechazada } }
+    delete:
+      x-velora-policy: admin
+      summary: Quita la clave
+      responses: { '204': { description: Quitada } }
+  /api/v1/home:
+    get:
+      x-velora-policy: user
+      summary: Continuar viendo (por última reproducción), siguiente episodio (next_up), destacados y novedades
+      responses: { '200': { description: OK } }
+  /api/v1/admin/markers:
+    get:
+      summary: Progreso de análisis de intros y créditos
+      x-velora-policy: admin
+      responses: { '200': { description: Episodios analizados, pendientes y estado } }
+    post:
+      summary: Iniciar o reanudar detección de marcas
+      x-velora-policy: admin
+      responses: { '200': { description: Detección encolada } }
+    delete:
+      summary: Detener detección sin borrar marcas guardadas
+      x-velora-policy: admin
+      responses: { '200': { description: Pausa solicitada } }
+  /api/v1/items:
+    get:
+      x-velora-policy: user
+      summary: Películas y series (kind; filtro por biblioteca, género y vistas; búsqueda sin tildes; varios órdenes). Una serie está vista cuando lo están todos sus episodios
+      parameters:
+        - { in: query, name: library_id, schema: { type: string, format: uuid } }
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: genre, schema: { type: string } }
+        - { in: query, name: person, schema: { type: integer, minimum: 1 }, description: Filtrar filmografía por identificador TMDB de persona }
+        - { in: query, name: played, schema: { type: string, enum: [played, unplayed] } }
+        - { in: query, name: sort, schema: { type: string, enum: [title, added, year, rating, runtime, last_played, resolution] } }
+        - { in: query, name: order, description: "reverse invierte el orden natural del criterio", schema: { type: string, enum: [reverse] } }
+        - { in: query, name: limit, schema: { type: integer, maximum: 200 } }
+        - { in: query, name: offset, schema: { type: integer } }
+      responses: { '200': { description: OK } }
+  /api/v1/genres:
+    get:
+      x-velora-policy: user
+      summary: Géneros de las películas visibles para el usuario, con su número (filtro de la biblioteca)
+      parameters:
+        - { in: query, name: library_id, schema: { type: string, format: uuid } }
+      responses: { '200': { description: OK } }
+  /api/v1/admin/metadata/image-providers:
+    get:
+      x-velora-policy: admin
+      summary: Estado de Fanart, TheTVDB y OMDb; nunca devuelve claves ni PIN
+      responses: { '200': { description: Configuración pública de fuentes } }
+  /api/v1/admin/metadata/image-providers/{provider}:
+    put:
+      x-velora-policy: admin
+      summary: Validar y guardar credenciales de una fuente (fanart, tvdb, omdb)
+      responses: { '200': { description: Guardada }, '422': { description: Credenciales o fuente no disponibles } }
+    delete:
+      x-velora-policy: admin
+      summary: Desactivar y eliminar credenciales de una fuente
+      responses: { '200': { description: Eliminada } }
+  /api/v1/admin/items/{id}/images/preview:
+    get:
+      x-velora-policy: admin
+      summary: Miniatura de una imagen verificada de Fanart, TheTVDB u OMDb, sin URLs arbitrarias
+      responses: { '200': { description: Imagen reducida }, '422': { description: Imagen no válida } }
+  /api/v1/catalog/revision:
+    get:
+      x-velora-policy: user
+      summary: Revisión ligera del catálogo para actualizar las pantallas durante el escaneo
+      responses: { '200': { description: Revisión como cadena decimal, sin títulos ni información de bibliotecas } }
+  /api/v1/admin/playback:
+    get:
+      x-velora-policy: admin
+      summary: Preferencias globales de reproducción para todas las bibliotecas y dispositivos
+      responses: { '200': { description: audio_language (BCP 47), es-ES por defecto } }
+    put:
+      x-velora-policy: admin
+      summary: Guardar preferencias de reproducción y límites simultáneos; los campos omitidos conservan su valor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [audio_language]
+              properties:
+                audio_language: { type: string, example: es-ES }
+                max_streams_per_user: { type: integer, minimum: 0, maximum: 1000, default: 0, description: Reproducciones por cuenta; cero sin límite }
+                max_streams_per_ip: { type: integer, minimum: 0, maximum: 1000, default: 0, description: Reproducciones compartidas por IP; cero sin límite }
+                audio_dynamics: { type: string, enum: [off, balanced, night], default: balanced, description: Tratamiento de volumen local en el cliente; no fuerza transcodificación de vídeo }
+      responses: { '200': { description: Preferencia guardada }, '400': { description: Idioma inválido } }
+  /api/v1/admin/overview:
+    get:
+      x-velora-policy: admin
+      summary: Resumen del panel de control (versión, recuentos, reproducciones optimizadas, últimos escaneos)
+      responses: { '200': { description: OK } }
+  /api/v1/admin/libraries/scan:
+    post:
+      x-velora-policy: admin
+      summary: Escanear todas las bibliotecas activas (las que ya tienen un escaneo en cola o en curso no se duplican)
+      responses: { '202': { description: started y already } }
+  /api/v1/admin/scans:
+    get:
+      x-velora-policy: admin
+      summary: Último escaneo de cada biblioteca con su estado y progreso (fase, hechos, total, carpeta en curso)
+      responses: { '200': { description: OK } }
+  /api/v1/admin/items/{id}/metadata:
+    get:
+      x-velora-policy: admin
+      summary: Datos editables de una película con sus candados (I1)
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+    patch:
+      x-velora-policy: admin
+      summary: Guardar la edición manual; los campos cambiados quedan bloqueados (TMDB y el escaneo no los cambian)
+      responses: { '200': { description: OK }, '422': { description: Datos no válidos } }
+  /api/v1/admin/items/{id}/refresh:
+    post:
+      x-velora-policy: admin
+      summary: Actualizar desde TMDB (mode missing = completar lo vacío; all = volver a descargar lo no bloqueado)
+      responses: { '202': { description: Encolado }, '409': { description: Sin clave de TMDB o ya en curso } }
+  /api/v1/admin/items/{id}/files:
+    get:
+      x-velora-policy: admin
+      summary: Archivos y extras de una película (rutas relativas a la biblioteca)
+      responses: { '200': { description: OK } }
+  /api/v1/admin/items/{id}/identify/search:
+    get:
+      x-velora-policy: admin
+      summary: Candidatos de TMDB por título (q), año (year) e ID (tmdb_id); también «tmdb-603» o «imdb-tt0133093» en q. No cambia nada
+      responses: { '200': { description: OK }, '409': { description: Sin clave de TMDB }, '422': { description: Temporadas y episodios se identifican por su serie }, '502': { description: TMDB no responde } }
+  /api/v1/admin/items/{id}/identify/preview:
+    get:
+      x-velora-policy: admin
+      summary: Comparación entre la ficha actual y el candidato (tmdb_id), con lo que no cambiará por estar bloqueado. No cambia nada
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/admin/items/{id}/identify:
+    post:
+      x-velora-policy: admin
+      summary: Aplica la identificación elegida (tmdb_id, replace_locked, replace_images) en una transacción, solo sobre los metadatos
+      responses: { '200': { description: OK }, '409': { description: Ficha bloqueada o sin clave de TMDB }, '502': { description: TMDB ha fallado; no se aplica nada } }
+  /api/v1/admin/items/{id}/identify/undo:
+    post:
+      x-velora-policy: admin
+      summary: Vuelve a los datos anteriores a la última identificación o restablecimiento
+      responses: { '200': { description: OK }, '409': { description: Nada que deshacer } }
+  /api/v1/admin/items/{id}/identify/reset:
+    post:
+      x-velora-policy: admin
+      summary: Vuelve a la identificación automática desde el nombre de la carpeta (restore_images también quita las imágenes propias)
+      responses: { '200': { description: OK } }
+  /api/v1/admin/items/{id}/images:
+    get:
+      x-velora-policy: admin
+      summary: Tipos de imagen admitidos por esta ficha y de dónde sale cada una
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/admin/items/{id}/images/gallery:
+    get:
+      x-velora-policy: admin
+      summary: Imágenes disponibles en TMDB, separadas por categoría
+      responses: { '200': { description: OK }, '409': { description: Sin clave de TMDB }, '502': { description: TMDB no responde } }
+  /api/v1/admin/items/{id}/images/select:
+    post:
+      x-velora-policy: admin
+      summary: Guarda como elección manual una imagen de la galería (kind, file_path); TMDB y el escaneo no la sustituyen
+      responses: { '200': { description: OK }, '422': { description: Imagen no disponible para ese tipo } }
+  /api/v1/admin/items/{id}/images/upload:
+    post:
+      x-velora-policy: admin
+      summary: Sube una imagen propia (multipart kind, file; JPEG, PNG o WebP, 10 MB, 6000 px, 40 MP). Se valida y se vuelve a codificar
+      responses: { '200': { description: OK }, '413': { description: Demasiado grande }, '422': { description: Formato, tamaño o proporción no válidos } }
+  /api/v1/admin/items/{id}/images/{kind}:
+    delete:
+      x-velora-policy: admin
+      summary: Quita la imagen elegida a mano de ese tipo y vuelve a la automática
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/admin/metadata/thumb:
+    get:
+      x-velora-policy: admin
+      summary: Vista previa de una imagen de TMDB (path, size), servida por VELORA; el navegador no llama a TMDB
+      responses: { '200': { description: Imagen }, '400': { description: Ruta no válida }, '502': { description: TMDB no responde } }
+  /api/v1/admin/pending-items:
+    get:
+      x-velora-policy: admin
+      summary: Películas pendientes (carpeta con solo su tráiler), ocultas a los usuarios hasta que aparezca la película
+      responses: { '200': { description: OK } }
+  /api/v1/items/{id}:
+    get:
+      x-velora-policy: user
+      summary: >-
+        Ficha con ficheros (archivo original), pistas y extras (tráileres; se reproducen con su id como un fichero).
+        Según kind: una serie trae seasons y next_up (el episodio que toca); una temporada, episodes (con file_id);
+        un episodio, sus ficheros, series_id, season_number, episode_number y next_episode. Cada fichero (y cada
+        episodio de episodes) trae tech: insignias técnicas [{category, id, label}] calculadas del análisis de ffprobe
+        (resolution, hdr, video, audio, channels, fps, bitdepth, 3d, imax, container); lo desconocido no aparece
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/items/{id}/images/{kind}:
+    get:
+      x-velora-policy: user
+      summary: Cartel, fondo, destacada (banner), logotipo o miniatura (thumb); la elección manual tiene prioridad sobre la local y la de TMDB
+      responses: { '200': { description: Imagen }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/me/items/{id}/progress:
+    put:
+      x-velora-policy: user
+      summary: Guarda la posición (gana la más reciente del cliente; vista al 90 %). Con file_id de un tráiler o extra, 400
+      responses: { '204': { description: Guardada } }
+  /api/v1/me/items/{id}/played:
+    post:
+      x-velora-policy: user
+      summary: Marca como vista (en una serie o temporada, todos sus episodios)
+      responses: { '204': { description: OK } }
+    delete:
+      x-velora-policy: user
+      summary: Marca como no vista (en una serie o temporada, todos sus episodios)
+      responses: { '204': { description: OK } }
+  /api/v1/me/items/{id}/continue-hidden:
+    post:
+      x-velora-policy: user
+      summary: Quita de Continuar viendo sin marcar como vista
+      responses: { '204': { description: OK } }
+    delete:
+      x-velora-policy: user
+      summary: Devuelve a Continuar viendo
+      responses: { '204': { description: OK } }
+  /api/v1/playback/decide:
+    post:
+      x-velora-policy: user
+      summary: Prioriza original, copia de pistas, audio adaptado y, solo para vídeo incompatible, transcodificación; dry_run solo estima
+      description: player_id identifica un reproductor, se conserva al cambiar audio o saltar; cada pestaña o reproductor usa un ID diferente. Pausa y buffering ocupan plaza. dry_run no reserva recursos.
+      responses: { '200': { description: Plan con método, URL, motivos y duración }, '403': { description: Sin permiso de reproducción }, '429': { description: Límite por usuario o IP alcanzado } }
+  /api/v1/stream/files/{id}:
+    get:
+      x-velora-policy: user
+      summary: Direct Play con HTTP Range (requiere can_play)
+      responses: { '200': { description: Vídeo }, '206': { description: Rango }, '503': { description: Montaje inaccesible } }
+  /api/v1/stream/files/{id}/seek:
+    get:
+      x-velora-policy: user
+      summary: Instante real (fotograma clave anterior) en el que empezará un flujo optimizado pedido en ?t=
+      responses: { '200': { description: OK }, '400': { description: Posición no válida }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/stream/files/{id}/chapters:
+    get:
+      x-velora-policy: user
+      summary: Capítulos del archivo; los titulados como intro o créditos se marcan (kind) para «Saltar intro/créditos»
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/stream/files/{id}/subtitles:
+    get:
+      x-velora-policy: user
+      summary: Subtítulos del archivo (pistas internas y archivos externos junto a la película); los de imagen se marcan como no disponibles
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/stream/files/{id}/subtitles/{sid}:
+    get:
+      x-velora-policy: user
+      summary: Un subtítulo como WebVTT (sid «i<índice>» interno o «e<n>» externo); en caché; ASS pierde estilos y posiciones
+      responses: { '200': { description: WebVTT }, '404': { $ref: '#/components/responses/NotFound' }, '422': { description: No se pudo convertir } }
+  /api/v1/stream/files/{id}/remux:
+    get:
+      x-velora-policy: user
+      summary: Copia vídeo a MP4 fragmentado o WebM; conserva audio compatible o convierte solo audio a AAC/Opus; buscar con ?t=segundos
+      parameters:
+        - { in: query, name: audio, schema: { type: integer } }
+        - { in: query, name: convert, schema: { type: boolean } }
+        - { in: query, name: t, schema: { type: number } }
+      responses: { '200': { description: MP4 fragmentado }, '503': { description: Servidor ocupado } }
+  /api/v1/stream/files/{id}/transcode:
+    get:
+      x-velora-policy: user
+      summary: Convierte vídeo incompatible con plan firmado, GPU preferida y respaldo por software; una conversión de vídeo simultánea
+      parameters:
+        - { in: query, name: ticket, required: true, schema: { type: string } }
+        - { in: query, name: t, schema: { type: number } }
+      responses: { '200': { description: MP4 fragmentado H.264 o HEVC Main10 HDR10 }, '403': { description: Plan inválido }, '503': { description: Servidor ocupado } }
+  /api/v1/items/{id}/presentation:
+    get:
+      x-velora-policy: user
+      summary: Reparto, equipo, estudios y países; carga opcional desde TMDB sin leer medios
+      responses: { '200': { description: Información disponible }, '404': { $ref: '#/components/responses/NotFound' }, '503': { description: Proveedor no disponible } }
+  /api/v1/items/{id}/people/{person}/image:
+    get:
+      x-velora-policy: user
+      summary: Retrato del reparto autorizado de esta ficha, servido desde el mismo origen
+      responses: { '200': { description: Imagen }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/people/{person}:
+    get:
+      x-velora-policy: user
+      summary: >-
+        Ficha de una persona del reparto (TMDB): nombre, biografía (en inglés si no la hay en español), nacimiento,
+        fallecimiento, lugar de nacimiento y si hay foto. Su filmografía en las bibliotecas es /api/v1/items?person=
+      responses: { '200': { description: OK }, '404': { $ref: '#/components/responses/NotFound' }, '503': { description: Proveedor no disponible } }
+  /api/v1/people/{person}/photo:
+    get:
+      x-velora-policy: user
+      summary: Foto grande de la persona, servida desde el mismo origen y guardada en caché
+      responses: { '200': { description: Imagen }, '404': { $ref: '#/components/responses/NotFound' } }
+  /api/v1/admin/metadata/opensubtitles:
+    get:
+      x-velora-policy: admin
+      summary: Estado global de OpenSubtitles sin devolver secretos
+      responses: { '200': { description: Configuración pública } }
+    put:
+      x-velora-policy: admin
+      summary: Comprobar y guardar configuración global de OpenSubtitles
+      responses: { '204': { description: Guardada }, '422': { description: Configuración o autenticación no válida } }
+    delete:
+      x-velora-policy: admin
+      summary: Quitar credenciales globales de OpenSubtitles
+      responses: { '204': { description: Eliminadas } }
+
+  /api/v1/playback/heartbeat:
+    post:
+      x-velora-policy: user
+      summary: Actualizar presencia del reproductor autenticado, sin modificar el historial
+      responses: { '204': { description: Estado recibido }, '403': { description: Sin permiso de reproducción }, '404': { description: Archivo no accesible }, '422': { description: Estado no válido } }
+  /api/v1/admin/now-playing:
+    get:
+      x-velora-policy: admin
+      summary: Reproducciones con señal reciente, usuario, dispositivo y método real de reproducción
+      responses: { '200': { description: Sesiones activas; caducan tras 45 segundos sin señal } }
+
+  /api/v1/collections/{collection}/poster:
+    get:
+      x-velora-policy: user
+      summary: Portada de la colección, preferentemente española, con control de acceso y caché
+      responses:
+        '200': {description: Imagen de la colección}
+        '307': {description: Alternativa de una película visible}
+  /api/v1/admin/collections/{collection}:
+    patch:
+      x-velora-policy: admin
+      summary: Editar nombre, sinopsis y portada de una colección en una biblioteca o en la vista global
+      responses:
+        '200': {description: Cambios guardados}
+  /api/v1/collections:
+    get:
+      x-velora-policy: user
+      summary: Colecciones TMDB con al menos dos películas distintas visibles y disponibles
+      responses: { '200': { description: Colecciones } }
+  /api/v1/collections/{collection}:
+    get:
+      x-velora-policy: user
+      summary: Películas disponibles de una colección con permisos del usuario
+      responses: { '200': { description: Colección y películas }, '404': { description: Colección no visible } }
