@@ -60,7 +60,7 @@ func TestTranscodeArgsBoundResources(t *testing.T) {
 	p := Plan{ConvertVideo: true, AudioIndex: 1, TargetWidth: 1920, TargetHeight: 1080, VideoBitrateKbps: 6000}
 	for _, mode := range []string{"software", "vaapi", "vaapi-upload"} {
 		args := strings.Join(TranscodeArgs(p, 20.5, mode), " ")
-		for _, want := range []string{"-i /dev/fd/3", "-c:a copy", "-ss 20.500", "-readrate 1.15", "-maxrate 6000k", "pipe:1"} {
+		for _, want := range []string{"-i /dev/fd/3", "-c:a copy", "-ss 20.500", "-readrate 3", "-readrate_initial_burst 20", "-readrate_catchup 6", "-maxrate 6000k", "pipe:1"} {
 			if !strings.Contains(args, want) {
 				t.Fatalf("%s: %s", mode, args)
 			}
@@ -152,6 +152,52 @@ func TestSoftwareTranscodeRealAndPreservesAudio(t *testing.T) {
 		}
 	}
 }
+
+// A real encoder must be able to build a reserve, including on FFmpeg 8 where
+// default catch-up pacing can silently negate the requested initial burst.
+func TestTranscodeBuildsBufferAhead(t *testing.T) {
+	if _, e := exec.LookPath("ffmpeg"); e != nil {
+		t.Skip(e)
+	}
+	dir := t.TempDir()
+	source := filepath.Join(dir, "long.mkv")
+	cmd := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=64x64:r=24:d=30", "-c:v", "mpeg4", "-threads", "1", source)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("fixture: %v %s", err, out)
+	}
+	in, err := os.Open(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer in.Close()
+	out, err := os.Create(filepath.Join(dir, "ahead.mp4"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	plan := Plan{AudioIndex: -1, ConvertVideo: true, TargetWidth: 64, TargetHeight: 64, VideoBitrateKbps: 500}
+	err = TranscodeAt(ctx, in, plan, Stream{CodecName: "mpeg4"}, "libx264", 0, out)
+	out.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(out.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	probe, err := RunProbe(context.Background(), f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Large tolerance for slow CI: the fixture is deliberately tiny. The old
+	// 1.15x/default-catchup policy produces only about 3 seconds here.
+	if probe.DurationMS() < 8000 {
+		t.Fatalf("no reserve after 3 seconds: %d ms", probe.DurationMS())
+	}
+}
+
 func TestHardwareTranscodeReal(t *testing.T) {
 	if os.Getenv("VELORA_TEST_HW") != "1" {
 		t.Skip("GPU solo en prueba explícita")

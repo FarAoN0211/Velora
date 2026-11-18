@@ -41,6 +41,9 @@ func TestTranscodeAuthorizationAndRealOutput(t *testing.T) {
 		b, _ := io.ReadAll(res.Body)
 		t.Fatalf("%d %s", res.StatusCode, b)
 	}
+	if res.Header.Get("X-Accel-Buffering") != "no" {
+		t.Fatal("el flujo convertido debe llegar sin almacenamiento intermedio del proxy")
+	}
 	path := filepath.Join(t.TempDir(), "converted.mp4")
 	f, err := os.Create(path)
 	if err != nil {

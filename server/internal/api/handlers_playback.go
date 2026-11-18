@@ -380,6 +380,7 @@ func (s *Server) streamRemux(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "video/x-matroska")
 	}
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Accel-Buffering", "no")
 	w.Header().Set("X-Velora-Method", "direct_stream")
 	out := media.IdleWriter{W: s.revocable(w, r, info.ID), RC: http.NewResponseController(w), Idle: remuxIdle}
 	if err := media.Remux(ctx, f, media.RemuxArgs(plan, videoCodec, start), out); err != nil {

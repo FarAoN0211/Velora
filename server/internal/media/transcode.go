@@ -79,7 +79,13 @@ func TranscodeArgs(p Plan, start float64, mode string) []string {
 	if mode == "vaapi" || mode == "vaapi-normal" {
 		a = append(a, "-hwaccel", "vaapi", "-hwaccel_device", "va", "-hwaccel_output_format", "vaapi")
 	}
-	a = append(a, "-threads", "2", "-readrate", "1.15", "-readrate_initial_burst", "5")
+	// This is file playback, not a live source. Allow bounded faster preparation so a
+	// variable mobile connection can recover without starving the next fragment.
+	// The player supports up to 2x: the old 1.15x cap could not sustain it even
+	// on an otherwise idle encoder. FFmpeg 8 needs an explicit catch-up rate
+	// to build the initial reserve promptly and recover after blocked writes.
+	// Thread/concurrency limits still apply.
+	a = append(a, "-threads", "2", "-readrate", "3", "-readrate_initial_burst", "20", "-readrate_catchup", "6")
 	if start > 0 {
 		a = append(a, "-ss", strconv.FormatFloat(start, 'f', 3, 64))
 	}

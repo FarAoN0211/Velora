@@ -124,6 +124,7 @@ func (s *Server) streamTranscode(w http.ResponseWriter, r *http.Request) {
 	encoder := s.transcoder.EncoderFor(cfg.TranscodingMode, ticket.Plan)
 	w.Header().Set("Content-Type", "video/mp4")
 	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Accel-Buffering", "no")
 	w.Header().Set("X-Velora-Method", "transcode")
 	out := &countedOutput{Writer: media.IdleWriter{W: s.revocable(w, r, info.ID), RC: http.NewResponseController(w), Idle: remuxIdle}}
 	if err := media.TranscodeAt(ctx, f, ticket.Plan, media.VideoStream(probe), encoder, start, out, func(mode string) { s.activity.encoder(ticket.Session, info.ID, mode) }); err != nil && ctx.Err() == nil {
