@@ -2,7 +2,7 @@
 
 Servidor multimedia para instalar en tu propio equipo y reproducir tus películas y series desde la web o Android (móvil, tablet y TV). Tus bibliotecas, cuentas, progreso y configuración viven en tu servidor. No necesita una cuenta central de Velora.
 
-**Versión 0.22.4 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
+**Versión 0.22.5 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
 
 ## Instalación con Docker Compose
 
@@ -87,3 +87,5 @@ La versión0.22.1 corrige una omisión en el paquete inicial: faltaba la configu
 La versión 0.22.3 amplía el margen para preparar vídeo convertido en conexiones variables: adelanto inicial de 20 segundos y ritmo normal de preparación de 3× y recuperación de hasta 6×, sujeto a la capacidad real del servidor y al consumo del cliente. No cambia la velocidad de reproducción, la resolución ni los códecs elegidos; mantiene los límites de hilos y concurrencia. No requiere otro APK. Las desconexiones o un ancho de banda inferior al del vídeo siguen necesitando revisar la conexión o ajustar la calidad.
 
 La versión 0.22.4 muestra el origen del contenido al identificar una ficha: carpeta y archivo para películas, solo la carpeta de la serie para series. Incluye biblioteca, distintas versiones y aviso de archivos no disponibles, sin abrir los medios ni mostrar rutas absolutas del servidor.
+
+La versión 0.22.5 añade una segunda vía independiente para series no encontradas por su carpeta: usa el título común previo a SxxExx/1xNN en los nombres de al menos dos episodios distintos. Solo aplica una coincidencia TMDB única y exacta; los casos ambiguos quedan para revisión. «Identificar» muestra esos títulos como sugerencias. No requiere Sonarr ni otra aplicación instalada.

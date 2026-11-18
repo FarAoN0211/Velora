@@ -89,6 +89,7 @@ function ContentSource({ sources, kind }: { sources: ItemSource[]; kind?: string
 export function IdentifyDialog({ itemId, title, onClose, onEditManually }: { itemId: string; title: string; onClose: () => void; onEditManually: () => void }) {
   const base = `/api/v1/admin/items/${itemId}`;
   const [meta, setMeta] = useState<(Editable & { can_undo?: boolean; match_source?: string; kind?: string }) | null>(null);
+  const [seriesTitles, setSeriesTitles] = useState<{title:string;year?:number;episodes:number}[]>([]);
   const [sources, setSources] = useState<ItemSource[] | null>(null);
   const [query, setQuery] = useState('');
   const [year, setYear] = useState('');
@@ -102,9 +103,10 @@ export function IdentifyDialog({ itemId, title, onClose, onEditManually }: { ite
   const [done, setDone] = useState<string | null>(null);
 
   const load = async () => {
-    const r = await api<{ metadata: NonNullable<typeof meta>; sources?: ItemSource[] }>('GET', `${base}/metadata`);
+    const r = await api<{ metadata: NonNullable<typeof meta>; sources?: ItemSource[]; series_titles?: {title:string;year?:number;episodes:number}[] }>('GET', `${base}/metadata`);
     setMeta(r.metadata);
     setSources(r.sources ?? []);
+    setSeriesTitles(r.series_titles ?? []);
     return r.metadata;
   };
   useEffect(() => {
@@ -204,6 +206,14 @@ export function IdentifyDialog({ itemId, title, onClose, onEditManually }: { ite
         {error && <Banner tone="error">{error}</Banner>}
         {done && !error && <Banner>{done}</Banner>}
         {sources && <ContentSource sources={sources} kind={meta?.kind} />}
+        {meta?.kind === 'series' && seriesTitles.length > 0 && <section className="rounded-md bg-surface p-3" aria-label="Títulos encontrados en los episodios">
+          <h3 className="text-sm font-semibold">Títulos encontrados en los episodios</h3>
+          <p className="mt-1 text-xs text-text-muted">Deducidos de sus nombres, sin abrir los vídeos. Pueden diferir del idioma de la carpeta.</p>
+          <ul className="mt-2 flex max-h-40 flex-col gap-2 overflow-y-auto">{seriesTitles.map(hint => <li key={`${hint.title}:${hint.year}`} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="min-w-0 break-words">{hint.title}{hint.year ? ` (${hint.year})` : ''}<span className="ml-2 text-xs text-text-muted">{hint.episodes} {hint.episodes === 1 ? 'episodio' : 'episodios'}</span></span>
+            {!preview && <Button variant="secondary" disabled={busy} onClick={() => {setQuery(hint.title);setYear(hint.year ? String(hint.year) : '');setTmdbId('');setResults(null);}}>Usar este título</Button>}
+          </li>)}</ul>
+        </section>}
         {preview ? (
           <>
             <p className="text-sm text-text-muted">Comprueba que es el título correcto. Solo cambia la ficha: el archivo, su ruta y el progreso se quedan igual.</p>

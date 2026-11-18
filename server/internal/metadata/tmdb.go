@@ -294,10 +294,25 @@ func (t *TMDB) enrich(ctx context.Context, it store.PendingMetadata, onlyMissing
 				ID int `json:"id"`
 			} `json:"results"`
 		}
-		if err := json.Unmarshal(raw, &sr); err != nil || len(sr.Results) == 0 || sr.Results[0].ID <= 0 {
-			return false, nil
+		if err := json.Unmarshal(raw, &sr); err != nil {
+			return false, err
 		}
-		id = strconv.Itoa(sr.Results[0].ID)
+		if len(sr.Results) == 0 {
+			if it.Kind == "series" {
+				id, err = t.seriesFallback(ctx, it)
+				if err != nil {
+					return false, err
+				}
+			}
+			if id == "" {
+				return false, nil
+			}
+		} else {
+			if sr.Results[0].ID <= 0 {
+				return false, nil
+			}
+			id = strconv.Itoa(sr.Results[0].ID)
+		}
 	}
 	m, err := t.detailsFor(ctx, key, it.Kind, id)
 	if err != nil {

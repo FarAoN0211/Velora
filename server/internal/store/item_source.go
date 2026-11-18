@@ -59,3 +59,24 @@ func (s *Store) AdminItemSources(ctx context.Context, id uuid.UUID) ([]ItemSourc
 	}
 	return out, nil
 }
+
+// SeriesEpisodeNames reads one catalogue filename per distinct episode; duplicate
+// quality versions cannot manufacture agreement. No filesystem or provider I/O.
+func (s *Store) SeriesEpisodeNames(ctx context.Context, id uuid.UUID) ([]string, error) {
+	rows, err := s.Pool.Query(ctx, `select min(f.rel_path) from media_items e
+  join media_files f on f.item_id=e.id where e.series_id=$1 and e.kind='episode' and f.missing_since is null
+  group by e.id order by min(f.rel_path) limit 40`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		out = append(out, name)
+	}
+	return out, rows.Err()
+}

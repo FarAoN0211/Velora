@@ -63,3 +63,11 @@ El diálogo de identificación muestra los nombres originales del catálogo junt
 La respuesta administrativa de metadatos añade `sources` (biblioteca, carpeta relativa, archivo opcional y disponibilidad). Se consulta exclusivamente el catálogo: no se abre el contenido ni se inicia una lectura remota. El acceso sigue reservado a administradores; no se exponen rutas absolutas del anfitrión. No hay migraciones ni cambios de APK.
 
 Validación de 0.22.4: pruebas API de película con identificación incorrecta, versiones múltiples y archivo ausente, restricción a administradores y carpeta de serie sin episodios. Regresión de edición/candados correcta. Web: tipos, tokens, compilación CSS y revisión visual real en Chrome de escritorio y móvil con datos ficticios.
+
+## 0.22.5: identificación independiente mediante nombres de episodios
+
+Cuando una serie sin TMDB asignado no obtiene resultados por el nombre de su carpeta, se consulta el catálogo de episodios. Se extrae solo el prefijo anterior a SxxExx/1xNN, nunca el título del episodio posterior al marcador. Deben coincidir al menos dos episodios distintos, sin prefijos contradictorios; las versiones de un episodio no multiplican la evidencia. Se acepta únicamente un resultado cuyo título original o localizado coincida exactamente tras normalizar puntuación/acentos y cuyo año, si se conoce, corresponda. Si no hay evidencia suficiente o hay ambigüedad, no se identifica automáticamente.
+
+No consulta Sonarr ni ninguna aplicación externa: solo nombres ya catalogados y el proveedor TMDB configurado por el propietario. No abre vídeos, cambia carpetas ni añade servicios de traducción. Las identidades existentes se conservan y la aplicación de metadatos mantiene su protección frente a cambios concurrentes. El diálogo administrativo muestra los títulos deducidos y un botón para usarlos en una búsqueda manual.
+
+Pruebas: extracción del prefijo, formato 1xNN/SxxExx y normalización; identificación correcta con alias de carpeta sin resultados; rechazo de resultados ambiguos, prefijos contradictorios y versiones de un único episodio; conservación del identificador existente; sugerencias por la API; regresión del origen de películas/series. Todas ejecutadas en entorno aislado con proveedor simulado y sin aplicaciones auxiliares. Web: tipos y compilación correctos. No hay migraciones ni APK nuevo.
