@@ -45,7 +45,12 @@ func (s *Server) getItemMetadata(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, "admin/items/metadata", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"metadata": m, "tmdb_configured": s.tmdb.Configured()})
+	sources, err := s.store.AdminItemSources(r.Context(), id)
+	if err != nil {
+		s.internal(w, "admin/items/source", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"metadata": m, "sources": sources, "tmdb_configured": s.tmdb.Configured()})
 }
 
 // cleanText quita espacios sobrantes y caracteres de control (se guarda texto plano; la web lo muestra como texto).

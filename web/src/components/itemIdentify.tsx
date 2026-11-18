@@ -61,9 +61,35 @@ function Poster({ path, label }: { path?: string; label: string }) {
   );
 }
 
+interface ItemSource {
+  library: string;
+  folder: string;
+  filename?: string;
+  missing: boolean;
+}
+
+function ContentSource({ sources, kind }: { sources: ItemSource[]; kind?: string }) {
+  return <section aria-label="Origen del contenido" className="rounded-md border border-border bg-surface p-3">
+    <h3 className="text-sm font-semibold">Origen del contenido</h3>
+    <p className="mt-1 text-xs text-text-muted">Nombres originales de tu biblioteca. Compáralos con la ficha antes de confirmar.</p>
+    <ul className="mt-3 flex max-h-48 flex-col gap-3 overflow-y-auto">
+      {sources.map((source, index) => <li key={`${source.library}:${source.folder}:${source.filename ?? ''}:${index}`} className="text-sm">
+        <p className="text-xs text-text-muted">Biblioteca: {source.library}{source.missing ? ' · No disponible ahora' : ''}</p>
+        <dl className="mt-1 grid min-w-0 grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+          <dt className="text-text-muted">Carpeta</dt>
+          <dd className="min-w-0 select-text break-all">{!source.folder || source.folder === '.' ? 'Raíz de la biblioteca' : source.folder}</dd>
+          {kind !== 'series' && source.filename && <><dt className="text-text-muted">Archivo</dt><dd className="min-w-0 select-text break-all">{source.filename}</dd></>}
+        </dl>
+      </li>)}
+    </ul>
+    {sources.length === 0 && <p className="mt-2 text-sm text-text-muted">No hay un origen registrado para esta ficha.</p>}
+  </section>;
+}
+
 export function IdentifyDialog({ itemId, title, onClose, onEditManually }: { itemId: string; title: string; onClose: () => void; onEditManually: () => void }) {
   const base = `/api/v1/admin/items/${itemId}`;
   const [meta, setMeta] = useState<(Editable & { can_undo?: boolean; match_source?: string; kind?: string }) | null>(null);
+  const [sources, setSources] = useState<ItemSource[] | null>(null);
   const [query, setQuery] = useState('');
   const [year, setYear] = useState('');
   const [tmdbId, setTmdbId] = useState('');
@@ -76,8 +102,9 @@ export function IdentifyDialog({ itemId, title, onClose, onEditManually }: { ite
   const [done, setDone] = useState<string | null>(null);
 
   const load = async () => {
-    const r = await api<{ metadata: NonNullable<typeof meta> }>('GET', `${base}/metadata`);
+    const r = await api<{ metadata: NonNullable<typeof meta>; sources?: ItemSource[] }>('GET', `${base}/metadata`);
     setMeta(r.metadata);
+    setSources(r.sources ?? []);
     return r.metadata;
   };
   useEffect(() => {
@@ -176,6 +203,7 @@ export function IdentifyDialog({ itemId, title, onClose, onEditManually }: { ite
       <div className="flex flex-col gap-4">
         {error && <Banner tone="error">{error}</Banner>}
         {done && !error && <Banner>{done}</Banner>}
+        {sources && <ContentSource sources={sources} kind={meta?.kind} />}
         {preview ? (
           <>
             <p className="text-sm text-text-muted">Comprueba que es el título correcto. Solo cambia la ficha: el archivo, su ruta y el progreso se quedan igual.</p>
@@ -532,6 +560,7 @@ export function ImagesDialog({ itemId, title, onClose }: { itemId: string; title
       <div className="flex flex-col gap-4">
         {error && <Banner tone="error">{error}</Banner>}
         {done && !error && <Banner>{done}</Banner>}
+
         {!state && !error && <p className="text-sm text-text-muted">Cargando…</p>}
         {state && (
           <>

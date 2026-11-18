@@ -2,7 +2,7 @@
 
 Servidor multimedia para instalar en tu propio equipo y reproducir tus películas y series desde la web o Android (móvil, tablet y TV). Tus bibliotecas, cuentas, progreso y configuración viven en tu servidor. No necesita una cuenta central de Velora.
 
-**Versión 0.22.3 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
+**Versión 0.22.4 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
 
 ## Instalación con Docker Compose
 
@@ -85,3 +85,5 @@ Conserva `deploy/.env` si lo tenías, tus volúmenes y las rutas de los medios. 
 La versión0.22.1 corrige una omisión en el paquete inicial: faltaba la configuración PostCSS y Tailwind no generaba sus utilidades. Se incluye la configuración completa y la compilación comprueba los estilos de web y TV. No se necesita borrar la base de datos, volver a crear usuarios ni reescanear bibliotecas para aplicar esta corrección.
 
 La versión 0.22.3 amplía el margen para preparar vídeo convertido en conexiones variables: adelanto inicial de 20 segundos y ritmo normal de preparación de 3× y recuperación de hasta 6×, sujeto a la capacidad real del servidor y al consumo del cliente. No cambia la velocidad de reproducción, la resolución ni los códecs elegidos; mantiene los límites de hilos y concurrencia. No requiere otro APK. Las desconexiones o un ancho de banda inferior al del vídeo siguen necesitando revisar la conexión o ajustar la calidad.
+
+La versión 0.22.4 muestra el origen del contenido al identificar una ficha: carpeta y archivo para películas, solo la carpeta de la serie para series. Incluye biblioteca, distintas versiones y aviso de archivos no disponibles, sin abrir los medios ni mostrar rutas absolutas del servidor.
