@@ -2,7 +2,7 @@
 
 Servidor multimedia para instalar en tu propio equipo y reproducir tus películas y series desde la web o Android (móvil, tablet y TV). Tus bibliotecas, cuentas, progreso y configuración viven en tu servidor. No necesita una cuenta central de Velora.
 
-**Versión 0.22.5 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
+**Versión 0.22.6 · GPL-3.0-or-later.** Proyecto en desarrollo activo: conserva copias de seguridad antes de actualizar.
 
 ## Instalación con Docker Compose
 

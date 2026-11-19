@@ -71,3 +71,10 @@ Cuando una serie sin TMDB asignado no obtiene resultados por el nombre de su car
 No consulta Sonarr ni ninguna aplicación externa: solo nombres ya catalogados y el proveedor TMDB configurado por el propietario. No abre vídeos, cambia carpetas ni añade servicios de traducción. Las identidades existentes se conservan y la aplicación de metadatos mantiene su protección frente a cambios concurrentes. El diálogo administrativo muestra los títulos deducidos y un botón para usarlos en una búsqueda manual.
 
 Pruebas: extracción del prefijo, formato 1xNN/SxxExx y normalización; identificación correcta con alias de carpeta sin resultados; rechazo de resultados ambiguos, prefijos contradictorios y versiones de un único episodio; conservación del identificador existente; sugerencias por la API; regresión del origen de películas/series. Todas ejecutadas en entorno aislado con proveedor simulado y sin aplicaciones auxiliares. Web: tipos y compilación correctos. No hay migraciones ni APK nuevo.
+
+
+## 0.22.6: reproductor nativo en todos los APK
+
+APK 0.8.2 (30), Media3 compartido por TV, móvil y tablet. Se elimina la restricción de TV en el puente Android y en la web. Los APK antiguos que rechazan la apertura conservan el reproductor web; web=1 mantiene el respaldo tras errores. Tocar el vídeo muestra los botones sin pausar y respeta los avisos de intro/créditos. Sin cambios de política de códecs, rutas multimedia ni credenciales. La firma privada no se distribuye.
+
+Validación: 117 pruebas Android correctas, incluidas apertura nativa en móvil y toque sin pausa/respeto de avisos. Web: typecheck, tokens, build y comprobación del CSS correctos. Pendiente la prueba física del TBox UHD, que no expone ADB actualmente.

@@ -68,7 +68,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Reproductor propio de la app de TV, con Media3: abre el archivo tal cual siempre que el aparato sepa decodificarlo y solo pide al
+ * Reproductor propio de la app Android, con Media3: abre el archivo tal cual siempre que el aparato sepa decodificarlo y solo pide al
  * servidor que lo reempaquete cuando no. Mando: OK pausa, izquierda y derecha saltan, arriba o abajo llevan a los botones, Atrás sale.
  * Si falla, prueba a reempaquetar y a reabrir un número limitado de veces; si no, devuelve RESULTADO_FALLO y la app abre el reproductor web.
  */
@@ -322,6 +322,7 @@ public final class ReproductorActivity extends Activity {
                 .build();
         PlayerView vista = new PlayerView(this);
         vista.setUseController(false);
+        vista.setOnClickListener(v -> mostrarControlesTactiles());
         vista.setFocusable(false);
         vista.setPlayer(player);
         raiz.addView(vista, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -1008,6 +1009,14 @@ public final class ReproductorActivity extends Activity {
         botones.setVisibility(View.GONE);
         controles.setVisibility(View.GONE);
         cabecera.setVisibility(View.GONE);
+    }
+
+    /** Tocar el vídeo solo muestra los controles; reproducir/pausar requiere su botón. */
+    private void mostrarControlesTactiles() {
+        if (especial != null || panel.getVisibility() == View.VISIBLE) return;
+        controlesSoloManual = false;
+        botones.setVisibility(View.VISIBLE);
+        mostrarControles();
     }
 
     private void mostrarControles() {

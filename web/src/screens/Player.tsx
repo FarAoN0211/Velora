@@ -53,12 +53,13 @@ function useLeavePlayer(id: string) {
   }, [id, navigate]);
 }
 
-/** En la app de TV reproduce el reproductor propio; este queda para la web, el móvil y como respaldo si aquel falla. */
+/** El APK usa Media3 en todos los dispositivos; el navegador y los APK antiguos conservan el respaldo web. */
 export function Player() {
   const { id = '' } = useParams();
   const [params] = useSearchParams();
   const leave = useLeavePlayer(id);
-  const native = isTv && !!window.VeloraApp?.reproducir && !params.get('web');
+  const [nativeRejected, setNativeRejected] = useState(false);
+  const native = !!window.VeloraApp?.reproducir && !params.get('web') && !nativeRejected;
   useMobilePlayerFullscreen(!native);
   useEffect(() => {
     if (!native) return;
@@ -67,6 +68,7 @@ export function Player() {
       JSON.stringify({ item: id, file: params.get('file') ?? '', audio: audio === null ? -1 : Number(audio), inicio: !!params.get('inicio'), device: deviceId(), sub: params.get('sub') ?? '' }),
     );
     if (started) leave();
+    else setNativeRejected(true);
   }, [native, id, params, leave]);
   // key: al pasar al episodio siguiente el reproductor empieza de cero (plan, pistas, capítulos y progreso).
   return native ? <Loading /> : <WebPlayer key={id} />;

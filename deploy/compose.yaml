@@ -1,6 +1,6 @@
 name: velora
 x-app: &app
-  image: velora:${VELORA_VERSION:-0.22.5}
+  image: velora:${VELORA_VERSION:-0.22.6}
   user: ${VELORA_UID:-1000}:${VELORA_GID:-100}
   environment: &environment
     VELORA_DATABASE_URL: ${VELORA_DATABASE_URL:-}
@@ -68,7 +68,7 @@ services:
       context: ..
       dockerfile: deploy/Dockerfile
       args:
-        VERSION: ${VELORA_VERSION:-0.22.5}
+        VERSION: ${VELORA_VERSION:-0.22.6}
     command: [serve]
     ports:
       - ${VELORA_BIND:-0.0.0.0}:${VELORA_PORT:-8640}:8640

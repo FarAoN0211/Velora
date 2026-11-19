@@ -26,6 +26,24 @@ public class MainActivityFullscreenTest {
         }
         fail("Puente no encontrado");
     }
+    @Test public void movilAbreLaMismaActividadNativaQueTv() throws Exception {
+        MainActivity app = Robolectric.buildActivity(MainActivity.class).get();
+        ReflectionHelpers.setField(app, "origen", "https://velora.example");
+        ReflectionHelpers.setField(app, "esTv", false);
+        Class<?> tipo = java.util.Arrays.stream(MainActivity.class.getDeclaredClasses())
+                .filter(c -> c.getSimpleName().equals("Puente")).findFirst().get();
+        java.lang.reflect.Constructor<?> constructor = tipo.getDeclaredConstructor(MainActivity.class);
+        constructor.setAccessible(true);
+        Object puente = constructor.newInstance(app);
+        java.lang.reflect.Method metodo = tipo.getDeclaredMethod("reproducir", String.class);
+        metodo.setAccessible(true);
+        assertEquals(true, metodo.invoke(puente, "{\"item\":\"episodio\"}"));
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle();
+        android.content.Intent intent = org.robolectric.Shadows.shadowOf(app).getNextStartedActivity();
+        assertEquals(ReproductorActivity.class.getName(), intent.getComponent().getClassName());
+        assertEquals("{\"item\":\"episodio\"}", intent.getStringExtra(ReproductorActivity.DATOS));
+    }
+
     @Test public void movilEntraSinGestoYRestauraBarrasAlSalir() throws Exception {
         MainActivity app = Robolectric.buildActivity(MainActivity.class).get();
         activar(app, true);

@@ -1,6 +1,6 @@
 # Velora para Android
 
-Un APK para móvil, tablet y TV Box (Android6 o superior). La navegación carga la web de tu servidor; en TV, Media3 proporciona el reproductor nativo. Móvil utiliza el reproductor web y solicita pantalla completa cuando la plataforma lo permite.
+Un APK para móvil, tablet y TV Box (Android6 o superior). La navegación carga la web de tu servidor; Media3 proporciona el mismo reproductor nativo en TV, móvil y tablet, con detección de códecs del aparato y pantalla completa horizontal. Tocar el vídeo muestra los controles sin pausarlo. Requiere la web actualizada; el navegador y los APK antiguos conservan el reproductor web como respaldo.
 
 ## Descargar sin compilar
 

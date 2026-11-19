@@ -136,10 +136,9 @@ public final class MainActivity extends Activity {
             });
         }
 
-        /** Solo existe el reproductor propio en TV; la web sigue con el suyo en móvil y como respaldo. */
+        /** El mismo reproductor Media3 en TV, móvil y tablet; la web queda como respaldo. */
         @JavascriptInterface
         public boolean reproducir(String datos) {
-            if (!esTv) return false;
             runOnUiThread(() -> {
                 Intent i = new Intent(MainActivity.this, ReproductorActivity.class);
                 i.putExtra(ReproductorActivity.DATOS, datos);

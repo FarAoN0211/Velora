@@ -50,6 +50,23 @@ public class ReproductorActivityTest {
         ((android.os.Handler) campo("hilo")).removeCallbacksAndMessages(null);
     }
 
+    @Test public void tocarVideoMuestraBotonesSinCambiarReproduccion() throws Exception {
+        ExoPlayer player = (ExoPlayer) campo("player");
+        player.setPlayWhenReady(true);
+        llamar("mostrarControlesTactiles");
+        assertTrue(player.getPlayWhenReady());
+        assertEquals(View.VISIBLE, vista("controles").getVisibility());
+        assertEquals(View.VISIBLE, vista("botones").getVisibility());
+        assertEquals(View.VISIBLE, vista("cabecera").getVisibility());
+    }
+
+    @Test public void tocarVideoDuranteIntroNoMuestraControles() throws Exception {
+        poner("especial", new JSONObject().put("kind", "intro"));
+        llamar("mostrarControlesTactiles");
+        assertEquals(View.GONE, vista("controles").getVisibility());
+        assertEquals(View.GONE, vista("botones").getVisibility());
+    }
+
     @Test public void conElPerfilBloqueadoVuelveALaWebParaPedirElPin() throws Exception {
         assertNotEquals(ReproductorActivity.RESULTADO_FALLO, ReproductorActivity.RESULTADO_BLOQUEADO);
         llamar("salirBloqueado");

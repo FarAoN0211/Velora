@@ -1,7 +1,7 @@
 # 6. Android y Android TV paso a paso
 
-La app de Velora es un único APK para móvil, tablet y TV con Android 6 o superior. Muestra la web de tu servidor y, en
-la TV, usa además un reproductor propio para el mando y para reproducir más formatos sin convertirlos.
+La app de Velora es un único APK para móvil, tablet y TV con Android 6 o superior. Muestra la web de tu servidor y usa el mismo reproductor nativo Media3 en TV, móvil y tablet,
+para reproducir más formatos sin convertirlos cuando el dispositivo los admite.
 
 ## 1. Conseguir el APK
 
@@ -53,7 +53,7 @@ Al cuarto dígito se abre solo. **He olvidado mi PIN** está en la misma pantall
 - **Menú** abre el menú del título seleccionado (reproducir desde el principio, marcar como visto…).
 - El **Panel de control** del administrador no aparece en la TV: se usa desde el navegador o el móvil.
 
-## 6. El reproductor de la TV
+## 6. El reproductor nativo
 
 - OK muestra los controles; las flechas izquierda y derecha avanzan o retroceden.
 - **Audio y subtítulos**, **Volumen automático** (Original, Equilibrado, Nocturno) y la información de reproducción
@@ -63,7 +63,10 @@ Al cuarto dígito se abre solo. **He olvidado mi PIN** está en la misma pantall
   inicio) o la TV la suspende, el tiempo de bloqueo empieza a contar; al volver, si ha pasado, se pide el PIN.
 - Si el aparato no puede abrir un archivo, Velora lo intenta adaptado y, como último recurso, con el reproductor web.
 
-En el móvil se usa el reproductor web, que pasa a pantalla completa cuando el sistema lo permite.
+En móvil y tablet, el APK 0.8.2 o posterior usa también Media3 en pantalla completa horizontal. Tocar
+el vídeo muestra los controles sin pausarlo; se pausa con su botón. Los avisos de intro/siguiente episodio
+no muestran los controles al pulsarlos. La web del servidor debe estar actualizada a 0.22.6 o posterior.
+El navegador y los APK anteriores conservan el respaldo web.
 
 ## 7. Actualizaciones
 
@@ -71,7 +74,7 @@ La app comprueba si hay una versión nueva al abrirse y de vez en cuando. Si la 
 para instalarla. Solo acepta un APK con la **misma firma** que la instalada y cuya huella coincide con la publicada:
 una app firmada por otra persona no puede sustituir a la tuya.
 
-Las mejoras de la web llegan sin actualizar la app; los cambios del reproductor de la TV necesitan una versión nueva
+Las mejoras de la web llegan sin actualizar la app; los cambios del reproductor nativo necesitan una versión nueva
 del APK.
 
 ## 8. Cerrar sesión o retirar un dispositivo
